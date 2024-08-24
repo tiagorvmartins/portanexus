@@ -1,4 +1,5 @@
-# PortaNexus
+# PortaNexus ![Android APK Workflow](https://github.com/tiagorvmartins/portanexus/actions/workflows/android.release.apk.yml/badge.svg) [![Download APK v0.1.0](https://img.shields.io/badge/download-v0.1.0-green)](https://github.com/tiagorvmartins/portanexus/releases/download/v0.1.0/portanexus-v0.1.0.apk)
+
 
 ## A mobile connection for your Portainer instance
 
