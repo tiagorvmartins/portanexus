@@ -1,6 +1,6 @@
 ### Roadmap from 0.1.0 to 1.0.0
 
-![roadmap](https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/roadmap.png?raw=true)
+<img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/roadmap.png" width=65% height=65%>
 
 More details below.
 
