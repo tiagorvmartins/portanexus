@@ -10,6 +10,7 @@ import moment from "moment";
 import { useGetStacksStore } from "../stores/GetStacksStore/useGetStacksStore";
 import Icon from '@expo/vector-icons/FontAwesome';
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
+import showErrorToast from "src/utils/toast";
 
 const statusDot = (status: number | string, styles: any) => {
   if (status === 1 || status === "running") {
@@ -51,32 +52,48 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
 
   const start = async (stackId: number) => {
     setLocalLoading(true)
-    await getStacksStore.startStack(stackId);
-    await getStacksStore.getStacks()
-    setExpanded(false);
+    try {
+      await getStacksStore.startStack(stackId);
+      await getStacksStore.getStacks()
+      setExpanded(false);
+    } catch {
+      showErrorToast("There was an error starting the stack", theme)
+    }
     setLocalLoading(false)
   };
 
   const stop = async (stackId: number) => {
     setLocalLoading(true)
-    await getStacksStore.stopStack(stackId);
-    await getStacksStore.getStacks()
-    setExpanded(false);
+    try {
+      await getStacksStore.stopStack(stackId);
+      await getStacksStore.getStacks()
+      setExpanded(false);
+    } catch {
+      showErrorToast("There was an error stopping the stack", theme)
+    }
     setLocalLoading(false)
   };
 
   const restart = async (stackId: number) => {
     setLocalLoading(true)
-    await getStacksStore.stopStack(stackId);
-    await getStacksStore.startStack(stackId);
-    await getStacksStore.getStacks()
-    setExpanded(false);
+    try {
+      await getStacksStore.stopStack(stackId);
+      await getStacksStore.startStack(stackId);
+      await getStacksStore.getStacks()
+      setExpanded(false);
+    } catch {
+      showErrorToast("There was an error restarting the stack", theme)
+    }
     setLocalLoading(false)
   };
 
-  const fetch = () => {
-    getContainersStore.mergeFilters(stackContainersFilter);
-    getContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
+  const fetch = async() => {
+    try {
+      getContainersStore.mergeFilters(stackContainersFilter);
+      await getContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
+    } catch {
+      showErrorToast("There was an error fetching the stack containers", theme)
+    } 
   }
 
   useEffect(() => {

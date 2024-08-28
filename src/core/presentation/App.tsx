@@ -34,19 +34,17 @@ function CustomDrawerContent(props: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <DrawerContentScrollView {...props}>
-        <DrawerItemList {...props} />
-      </DrawerContentScrollView>  
-        <View style={styles.logoutButtonContainer}>
-        <TouchableOpacity style={styles.button}  onPress={handleLogout}>
-          <Text style={styles.buttonText}>Logout</Text>
-          <Icon name="sign-out" size={20} style={styles.icon} />
-        </TouchableOpacity>
-        
-        </View>
-    </View>
-    
+      <View style={styles.container}>
+        <DrawerContentScrollView {...props}>
+          <DrawerItemList {...props} />
+        </DrawerContentScrollView>  
+          <View style={styles.logoutButtonContainer}>
+            <TouchableOpacity style={styles.button}  onPress={handleLogout}>
+              <Text style={styles.buttonText}>Logout</Text>
+              <Icon name="sign-out" size={20} style={styles.icon} />
+            </TouchableOpacity>
+          </View>
+      </View>
   );
 }
 
