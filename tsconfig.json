@@ -6,6 +6,8 @@
     "target": "es5",
     "module": "commonjs",
     "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "lib": ["dom", "es2015", "es2016", "esnext"],
   },
   "include": [

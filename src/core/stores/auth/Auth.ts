@@ -24,54 +24,19 @@ export class Auth {
   }
 
   setLoginApiKey = async (hostUrl: SecureStoreEntry, apiKey: SecureStoreEntry) => {
-
-    try {
-
-      await Promise.all([
-        await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.BASE_API_URL, hostUrl),
-        await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.API_KEY, apiKey)
-      ]);
-
-      this.setLoggedIn(true)
-    } catch {
-      this.setLoggedIn(false)
-    }
+    await Promise.all([
+      await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.BASE_API_URL, hostUrl),
+      await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.API_KEY, apiKey)
+    ]);
   }
 
-  checkLogin = async () => {
+  haveLoginDetail = async () => {
     const baseApiUrl = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.BASE_API_URL);
-    if (baseApiUrl) {
-      const apiKey = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.API_KEY);
-      if (apiKey) {
-        this.setLoggedIn(true)
-        return true
-      } else {
-        const username = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.USERNAME);
-        const password = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.PASSWORD);
-  
-        if(username && password){
-          this.setLoggedIn(true)
-          return true
-        }
-      }
+    const apiKey = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.API_KEY);
+    if (baseApiUrl && apiKey) {
+      return true
     }
-    this.setLoggedIn(false)
     return false
-  }
-
-  setLoginUserAndPassword = async (hostUrl: SecureStoreEntry, username: SecureStoreEntry, password: SecureStoreEntry) => {
-    try {
-
-      await Promise.all([
-        this.secureStoreWrapper.setItemAsync(SecureStoreEntry.BASE_API_URL, hostUrl),
-        this.secureStoreWrapper.setItemAsync(SecureStoreEntry.USERNAME, username),
-        this.secureStoreWrapper.setItemAsync(SecureStoreEntry.PASSWORD, password)
-      ]);
-
-      this.setLoggedIn(true)
-    } catch {
-      this.setLoggedIn(false)
-    } 
   }
 
   logout = async () => {
