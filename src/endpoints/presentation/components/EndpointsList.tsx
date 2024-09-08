@@ -1,4 +1,4 @@
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import React, { useEffect, useState } from "react";
 import { useGetThemeContext } from "src/theme/store/useThemeContext";
 import { observer } from "mobx-react";
@@ -6,6 +6,10 @@ import { useGetEndpointsStore } from "../stores/GetContainersStore/useGetEndpoin
 import { useAuthContext } from 'src/core/stores/auth/useAuthContext';
 import AppHeader from 'src/core/presentation/components/AppHeader';
 import { useGetLoadingContext } from "src/loading/store/useLoadingContext";
+import showErrorToast from 'src/utils/toast';
+import { Platform, RefreshControl as NativeRefreshControl } from 'react-native';
+import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
+const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
 const EndpointLists = observer(({navigation}: any) => {
   const getLoadingContext = useGetLoadingContext();
@@ -22,6 +26,8 @@ const EndpointLists = observer(({navigation}: any) => {
     try {
       getLoadingContext.addLoadingComponent();
       await getEndpointsStore.getEndpoints();
+    } catch {
+      showErrorToast("There was an error fetching the available endpoints", theme)
     } finally {
       getLoadingContext.removeLoadingComponent();
     }

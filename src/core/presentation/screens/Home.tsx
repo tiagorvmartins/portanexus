@@ -1,5 +1,5 @@
 
-import { StyleSheet, RefreshControl, ScrollView } from "react-native";
+import { StyleSheet, ScrollView } from "react-native";
 import AppHeader from "src/core/presentation/components/AppHeader";
 import { useGetThemeContext } from "src/theme/store/useThemeContext";
 import Stacks from "src/stacks/presentation/components/Stacks";
@@ -15,8 +15,13 @@ import { useGetStacksStore } from "src/stacks/presentation/stores/GetStacksStore
 import { GetExitedContainersStoreProvider, GetRunningContainersStoreProvider } from "src/containers/presentation/stores/GetContainersStore/GetContainersStoreProvider";
 import { useGetExitedContainersStore, useGetRunningContainersStore } from "src/containers/presentation/stores/GetContainersStore/useGetContainersStore";
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
+import showErrorToast from "src/utils/toast";
+import { Platform, RefreshControl as NativeRefreshControl } from 'react-native';
+import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
+const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
 const HomepageScreen = observer(({navigation}: any) => {
+
   const getLoadingContext = useGetLoadingContext();
 
   const getThemeContext = useGetThemeContext();
@@ -40,6 +45,8 @@ const HomepageScreen = observer(({navigation}: any) => {
       }
       getRunningContainersStore.mergeFilters(runningPayload);
       await getRunningContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
+    } catch {
+      showErrorToast("There was an error fetching running containers", theme)
     } finally {
       getLoadingContext.removeLoadingComponent();
     }
@@ -53,6 +60,8 @@ const HomepageScreen = observer(({navigation}: any) => {
       }
       getExitedContainersStore.mergeFilters(exitedPayload);
       await getExitedContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
+    } catch {
+      showErrorToast("There was an error fetching exited containers", theme)
     } finally {
       getLoadingContext.removeLoadingComponent();
     }
@@ -66,6 +75,8 @@ const HomepageScreen = observer(({navigation}: any) => {
       getStacksStore.mergeFilters(endpointPayload);
       getLoadingContext.addLoadingComponent();
       await getStacksStore.getStacks();
+    } catch {
+      showErrorToast("There was an error fetching stacks containers", theme)
     } finally {
       getLoadingContext.removeLoadingComponent();
     }
@@ -75,6 +86,8 @@ const HomepageScreen = observer(({navigation}: any) => {
     try {
       getLoadingContext.addLoadingComponent();
       await getEndpointsStore.getEndpoints();
+    } catch {
+      showErrorToast("There was an error fetching exited endpoints", theme)
     } finally {
       getLoadingContext.removeLoadingComponent();
     }

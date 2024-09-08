@@ -61,7 +61,9 @@ export class GetEndpointsStore implements GetEndpointsStoreState {
       .then((response: any) => {
         this.setResults(response.results);
         this.setCount(response.count);
-        this.setSelectedEndpoint(response.results[0].Id);
+        if (this.selectedEndpoint === -1 && response && response.results.length) {
+          this.setSelectedEndpoint(response.results[0].Id);
+        }
       })
       .finally(() => {
         this.setIsLoading(false);
