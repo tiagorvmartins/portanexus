@@ -32,7 +32,7 @@ For convenience there is also a Docker image being maintained on docker hub [tia
 ```
 services:
   portanexus:
-    image: tiagorvmartins/portanexus-web:v0.2.0
+    image: tiagorvmartins/portanexus-web:v0.1.1
     ports:
       - "8080:80  # You can change the binded port on host to your needs if needed
 ```
