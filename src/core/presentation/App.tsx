@@ -4,12 +4,12 @@ import Icon from '@expo/vector-icons/FontAwesome';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { GetThemeProvider } from 'src/theme/store/ThemeProvider';
 import { withProviders } from 'src/utils/withProviders';
 import { observer } from 'mobx-react';
 import { useGetThemeContext } from 'src/theme/store/useThemeContext';
-
+import Toast from "react-native-toast-message";
 import LoginScreen from './screens/Login';
 import { AuthProvider } from '../stores/auth/AuthProvider';
 import { useAuthContext } from '../stores/auth/useAuthContext';
@@ -17,6 +17,8 @@ import { GetLoadingProvider } from 'src/loading/store/LoadingProvider';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import EndpointLists from 'src/endpoints/presentation/components/EndpointsList';
 import { GetEndpointsStoreProvider } from 'src/endpoints/presentation/stores/GetContainersStore/GetEndpointsStoreProvider';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
@@ -73,6 +75,7 @@ const DrawerNavigator = observer(() => {
 const App = observer(() => {
   const getThemeContext = useGetThemeContext();
   return (
+    <>
     <SafeAreaProvider>
       <NavigationContainer theme={getThemeContext.isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack.Navigator initialRouteName="Login">
@@ -81,9 +84,14 @@ const App = observer(() => {
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
+      {Platform.OS === 'web' ? (
+        <ToastContainer position="top-center" theme={getThemeContext.theme} />
+      ) : (
+        <Toast />
+      )}
+    </>
   );
 });
-
 
 const createStyles = (theme: string) => {
   return StyleSheet.create({

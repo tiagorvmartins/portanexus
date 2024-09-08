@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Switch, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { TextInput, Text } from 'react-native';
 import { useGetThemeContext } from 'src/theme/store/useThemeContext';
@@ -7,14 +7,14 @@ import Icon from '@expo/vector-icons/FontAwesome';
 import SecureStoreEntry from 'src/core/domain/enums/SecureStoreEntry';
 import { useAuthContext } from 'src/core/stores/auth/useAuthContext';
 import { useGetEndpointsStore } from 'src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import showErrorToast from 'src/utils/toast';
+import { useGetLoadingContext } from 'src/loading/store/useLoadingContext';
+import Loading from '../components/Loading';
 
 const LoginScreen = observer(({navigation}: any) => {
-    const [hostUrl, setHostUrl] = useState<SecureStoreEntry | undefined>("" as SecureStoreEntry);    
-    const [apiKey, setApiKey] = useState<SecureStoreEntry | undefined>("" as SecureStoreEntry);
-
+    const [hostUrl, setHostUrl] = useState<SecureStoreEntry>("" as SecureStoreEntry);    
+    const [apiKey, setApiKey] = useState<SecureStoreEntry>("" as SecureStoreEntry);
+    const getLoadingContext = useGetLoadingContext();
     const getThemeContext = useGetThemeContext();
     const { theme } = getThemeContext;
     const styles = createStyles(theme)
@@ -32,24 +32,9 @@ const LoginScreen = observer(({navigation}: any) => {
             navigation.replace('Root')
         } catch (e) {
             authContext.setLoggedIn(false)
-            showErrorToast("There was an error logging in, confirm your https Portainer Instance URL or API Key", theme)
+            showErrorToast("Error fetching endpoints, check credentials!", theme)
         }
     };
-
-    const apiKeyTemplate = () => {
-        return (
-            <View>
-                <TextInput
-                    placeholder="API Key"
-                    onChangeText={(text: string) => { setApiKey(text as SecureStoreEntry)}}
-                    placeholderTextColor={theme === 'light' ? 'rgba(51, 51, 51, 0.5)' : 'rgba(224, 224, 224, 0.5)'}
-                    value={apiKey}
-                    textAlign="center"
-                    style={styles.input}
-                />
-            </View>
-        );
-    }
 
     const [ loginFetched, setLoginFetched ] = useState<boolean | null>(null)
 
@@ -62,7 +47,7 @@ const LoginScreen = observer(({navigation}: any) => {
                     authContext.setLoggedIn(true)
                     return true
                 } catch {
-                    showErrorToast("There was an error confirming your login details, please login again", theme)
+                    showErrorToast("No credentials saved, please login again!", theme)
                 }
             }
             return false
@@ -83,26 +68,35 @@ const LoginScreen = observer(({navigation}: any) => {
         </View>
          :
         <View style={styles.container}>
-            <ToastContainer position="top-center" theme={theme} />
             <View style={styles.innerContainer}>
                 <Text style={styles.title}>Authentication</Text>
                 <View style={styles.containerInputs}>
                     <TextInput
-                        placeholder="Host URL"
-                        onChangeText={(text: string) => { setHostUrl(text as SecureStoreEntry)}}
+                        multiline={Platform.OS === 'web' ? false : true}
+                        placeholder="Portainer Host URL"
+                        onChangeText={(text: string) => { setHostUrl(text.replace(/\s/g, '') as SecureStoreEntry)}}
                         placeholderTextColor={theme === 'light' ? 'rgba(51, 51, 51, 0.5)' : 'rgba(224, 224, 224, 0.5)'}
                         value={hostUrl}
-                        textAlign="center"
                         style={styles.input}
                     />
-                    { apiKeyTemplate()}
+                    <TextInput
+                        multiline={Platform.OS === 'web' ? false : true}
+                        placeholder="API Key"
+                        onChangeText={(text: string) => { setApiKey(text.replace(/\s/g, '') as SecureStoreEntry)}}
+                        placeholderTextColor={theme === 'light' ? 'rgba(51, 51, 51, 0.5)' : 'rgba(224, 224, 224, 0.5)'}
+                        value={apiKey}
+                        style={styles.input}
+                    />
                 </View>
-                <Pressable
-                    onPress={handleLogin}
-                    style={styles.loginButton}
-                >
-                    <Text style={styles.loginButtonText}>Log In</Text>
-                </Pressable>
+                { getLoadingContext.isLoading ? 
+                    (<Loading/>) :
+                    (<Pressable
+                        onPress={handleLogin}
+                        style={styles.loginButton}
+                    >
+                        <Text style={styles.loginButtonText}>Log In</Text>
+                    </Pressable>)
+                }
 
                 <View style={styles.themeSwitchContainer}>
                     <Icon
@@ -168,6 +162,7 @@ const createStyles = (theme: string) => {
             shadowOpacity: 0.2,
             shadowRadius: 4,
             shadowOffset: { width: 0, height: 2 },
+            textAlign: 'center'
         },
         title: {
             marginBottom: 24,

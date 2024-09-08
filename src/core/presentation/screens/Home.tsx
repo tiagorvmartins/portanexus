@@ -15,10 +15,10 @@ import { useGetStacksStore } from "src/stacks/presentation/stores/GetStacksStore
 import { GetExitedContainersStoreProvider, GetRunningContainersStoreProvider } from "src/containers/presentation/stores/GetContainersStore/GetContainersStoreProvider";
 import { useGetExitedContainersStore, useGetRunningContainersStore } from "src/containers/presentation/stores/GetContainersStore/useGetContainersStore";
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
-import { ToastContainer } from "react-toastify";
 import showErrorToast from "src/utils/toast";
-import { RefreshControl } from "react-native-web-refresh-control"
-
+import { Platform, RefreshControl as NativeRefreshControl } from 'react-native';
+import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
+const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
 const HomepageScreen = observer(({navigation}: any) => {
 
@@ -139,7 +139,6 @@ const HomepageScreen = observer(({navigation}: any) => {
       }
       style={styles.container}>
       <AppHeader />
-      <ToastContainer position="top-center" theme={theme} />
       { getLoadingContext.isLoading ? 
         <Loading/> :
         <>

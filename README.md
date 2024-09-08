@@ -12,6 +12,72 @@ For the Portainer Instance URL be sure to add the route /api
 
 Example of Portainer Instance URL: https://example.tld/api
 
+## Android
+
+Support currently through apk file that can be downloaded from the github releases page of this repository.
+
+## iOS
+
+The support for iOS is only through PWA at the moment.
+
+## Progressive Web App (PWA) Installation and Usage using Docker
+
+
+There is a Dockerfile which you can use to build the portanexus application.
+
+For convenience there is also a Docker image being maintained on docker hub [tiagorvmartins/portanexus](https://hub.docker.com/r/tiagorvmartins/portanexus-web)
+
+**Compose**
+
+```
+services:
+  portanexus:
+    image: tiagorvmartins/portanexus-web:v0.2.0
+    ports:
+      - "8080:80  # You can change the binded port on host to your needs if needed
+```
+
+**Reverse Proxy configuration to expose PortaNexus (sample using caddy)**
+
+```
+portanexus.your-domain.ltd {
+  reverse_proxy http://127.0.0.1:8080  # or the port that you changed to
+}
+```
+
+
+
+### Portainer Extra Configuration for CORS
+There is an extra configuration to be done on **Portainer to allow CORS request** from the browser
+
+```
+portainer.your-domain.ltd {
+  
+  // ...
+  // your extra configurations
+  // ...
+
+  @cors {
+    method GET POST
+  }
+
+  header @cors Access-Control-Allow-Origin "*"
+
+  # Handle OPTIONS requests
+  @options {
+    method OPTIONS
+  }
+
+  header @options Access-Control-Allow-Origin "*"
+  header @options Access-Control-Allow-Headers "Authorization, Origin, X-Requested-With, Content-Type, Accept, X-Api-Key"
+  header @options Access-Control-Allow-Methods "GET, POST, OPTIONS"
+  respond @options "" 200
+}
+```
+
+
+
+
 ## Screens Showcase
 
 ### Login Screen
