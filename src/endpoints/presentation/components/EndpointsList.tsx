@@ -7,7 +7,9 @@ import { useAuthContext } from 'src/core/stores/auth/useAuthContext';
 import AppHeader from 'src/core/presentation/components/AppHeader';
 import { useGetLoadingContext } from "src/loading/store/useLoadingContext";
 import showErrorToast from 'src/utils/toast';
-import { RefreshControl } from "react-native-web-refresh-control"
+import { Platform, RefreshControl as NativeRefreshControl } from 'react-native';
+import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
+const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
 const EndpointLists = observer(({navigation}: any) => {
   const getLoadingContext = useGetLoadingContext();

@@ -1,0 +1,30 @@
+{
+    "short_name": "PortaNexus",
+    "name": "PortaNexus",
+    "icons": [
+      {
+        "src": "favicon.ico",
+        "sizes": "64x64 32x32 24x24 16x16",
+        "type": "image/x-icon"
+      },
+      {
+        "src": "icon_192x192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "icon_adaptive.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      },
+      {
+        "src": "icon_adaptive.png",
+        "type": "image/png",
+        "sizes": "1024x1024"
+      }
+    ],
+    "start_url": "index.html",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#000000"
+  }

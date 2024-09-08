@@ -14,19 +14,12 @@ class EndpointsRepository implements IEndpointRepository {
   ) {}
 
   public async get(): Promise<GetEndpointsResponse> {
-    try {
-      const endpoints = (await this.httpClient.get<unknown[]>(`${this.baseUrl}`));
-      const response: GetEndpointsResponse = {
-        results: endpoints.map((container: any) => plainToInstance(EndpointDto, container).toDomain()),
-        count: endpoints.length,
-      };
-      return response;
-    } catch {
-      return {
-        results: [],
-        count: 0
-      }
-    }
+    const endpoints = (await this.httpClient.get<unknown[]>(`${this.baseUrl}`));
+    const response: GetEndpointsResponse = {
+      results: endpoints.map((container: any) => plainToInstance(EndpointDto, container).toDomain()),
+      count: endpoints.length,
+    };
+    return response;
   }
 }
 

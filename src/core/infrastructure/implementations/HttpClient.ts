@@ -7,38 +7,41 @@ import ISecureStoreWrapper, { ISecureStoreWrapperToken } from "src/core/domain/s
 @injectable()
 class HttpClient implements IHttpClient {  
   private secureStoreWrapper: ISecureStoreWrapper
-  private axios: typeof axios | null
+  private requestInterceptorId: number | null = null;
+  private responseInterceptorId: number | null = null;
 
   constructor(@provided(ISecureStoreWrapperToken) private readonly secureStoreWrapperInjected: ISecureStoreWrapper) {
     this.secureStoreWrapper = this.secureStoreWrapperInjected
-    this.axios = null
   }
 
-  public async initialize(): Promise<AxiosStatic> {
-    if(this.axios)
-      return this.axios
-    
+  public async initialize(): Promise<AxiosStatic> {    
     const baseApiUrl = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.BASE_API_URL);
-    if (baseApiUrl) {
-      const apiKey = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.API_KEY);
-      if (apiKey) {
-        axios.interceptors.request.use((requestConfig) => {
+    const apiKey = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.API_KEY);
+    if (baseApiUrl && apiKey) {
+      
+        if (this.requestInterceptorId !== null) {
+          axios.interceptors.request.eject(this.requestInterceptorId);
+        }
+        if (this.responseInterceptorId !== null) {
+          axios.interceptors.response.eject(this.responseInterceptorId);
+        }
+
+        this.requestInterceptorId = axios.interceptors.request.use((requestConfig) => {
           requestConfig.baseURL = baseApiUrl;
-          requestConfig.headers.set("X-API-Key", apiKey)
+          requestConfig.headers['X-API-Key'] = apiKey;
           return requestConfig;
         });
 
-        axios.interceptors.response.use(undefined, (err: any) => {
+        this.responseInterceptorId = axios.interceptors.response.use(undefined, (err) => {
           if (err.response) {
-            if (err.response.status === 401 || err.response.status === 403) {
-              console.error(err)
+            if (err.response.status === 401 || 403) {
+              console.error("Authorization error:", err);
             }
           }
           return Promise.reject(err);
         });
-        this.axios = axios
-        return this.axios
-      }
+        return axios
+      
     }
     return Promise.reject(null)
   }
