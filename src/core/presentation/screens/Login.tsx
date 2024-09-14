@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Switch, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { TextInput, Text } from 'react-native';
 import { useGetThemeContext } from 'src/theme/store/useThemeContext';
@@ -10,6 +10,7 @@ import { useGetEndpointsStore } from 'src/endpoints/presentation/stores/GetConta
 import showErrorToast from 'src/utils/toast';
 import { useGetLoadingContext } from 'src/loading/store/useLoadingContext';
 import Loading from '../components/Loading';
+import Footer from '../components/Footer';
 
 const LoginScreen = observer(({navigation}: any) => {
     const [hostUrl, setHostUrl] = useState<SecureStoreEntry>("" as SecureStoreEntry);    
@@ -30,7 +31,7 @@ const LoginScreen = observer(({navigation}: any) => {
             await getEndpointsStore.getEndpoints();
             authContext.setLoggedIn(true)
             navigation.replace('Root')
-        } catch (e) {
+        } catch {
             authContext.setLoggedIn(false)
             showErrorToast("Error fetching endpoints, check credentials!", theme)
         }
@@ -52,73 +53,92 @@ const LoginScreen = observer(({navigation}: any) => {
             }
             return false
         }
-        checkLogin()
+
+        const checkTheme = async () => {
+            const themeStored = await authContext.checkThemeStored();            
+            getThemeContext.setTheme(themeStored);
+            return true;
+        }
+
+        checkTheme()
+        .then(checkLogin)
         .then((isLoggedIn) => {
             setLoginFetched(isLoggedIn)
             if(isLoggedIn)
                 navigation.replace('Root')
+            
         })
         .catch(console.error);
     }, []);
 
-    return (
-        loginFetched === null ?
-        <View style={styles.container}>
-            <ActivityIndicator size="large" />
-        </View>
-         :
-        <View style={styles.container}>
-            <View style={styles.innerContainer}>
-                <Text style={styles.title}>Authentication</Text>
-                <View style={styles.containerInputs}>
-                    <TextInput
-                        multiline={Platform.OS === 'web' ? false : true}
-                        placeholder="Portainer Host URL"
-                        onChangeText={(text: string) => { setHostUrl(text.replace(/\s/g, '') as SecureStoreEntry)}}
-                        placeholderTextColor={theme === 'light' ? 'rgba(51, 51, 51, 0.5)' : 'rgba(224, 224, 224, 0.5)'}
-                        value={hostUrl}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        multiline={Platform.OS === 'web' ? false : true}
-                        placeholder="API Key"
-                        onChangeText={(text: string) => { setApiKey(text.replace(/\s/g, '') as SecureStoreEntry)}}
-                        placeholderTextColor={theme === 'light' ? 'rgba(51, 51, 51, 0.5)' : 'rgba(224, 224, 224, 0.5)'}
-                        value={apiKey}
-                        style={styles.input}
-                    />
-                </View>
-                { getLoadingContext.isLoading ? 
-                    (<Loading/>) :
-                    (<Pressable
-                        onPress={handleLogin}
-                        style={styles.loginButton}
-                    >
-                        <Text style={styles.loginButtonText}>Log In</Text>
-                    </Pressable>)
-                }
+    useEffect(() => {
+        authContext.setProfileTheme(theme as SecureStoreEntry)
+    }, [theme])
 
-                <View style={styles.themeSwitchContainer}>
-                    <Icon
-                        name="sun-o"
-                        size={18}
-                        color={theme === 'dark' ? '#fff' : '#000'}
-                    />
-                    <Switch
-                        trackColor={{ false: "#767577", true: "#81b0ff" }}
-                        thumbColor={theme === 'light' ? "#f4f3f4" : "#f5dd4b"}
-                        ios_backgroundColor="#3e3e3e"
-                        onValueChange={() => getThemeContext.toggleTheme()}
-                        value={theme === 'dark'}
-                    />
-                    <Icon
-                        name="moon-o"
-                        size={18}
-                        color={theme === 'dark' ? '#fff' : '#000'}
-                    />
+    return (
+        <>
+            {loginFetched === null ?
+                <View style={styles.container}>
+                    <ActivityIndicator size="large" />
+                    <Footer />
                 </View>
-            </View>
-        </View>
+                :
+                <View style={styles.container}>
+                    <View style={styles.innerContainer}>
+                        <Text style={styles.title}>Authentication</Text>
+                        <View style={styles.containerInputs}>
+                            <TextInput
+                                multiline={Platform.OS === 'web' ? false : true}
+                                placeholder="Portainer Host URL"
+                                onChangeText={(text: string) => { setHostUrl(text.replace(/\s/g, '') as SecureStoreEntry)}}
+                                placeholderTextColor={theme === 'light' ? 'rgba(51, 51, 51, 0.5)' : 'rgba(224, 224, 224, 0.5)'}
+                                value={hostUrl}
+                                style={styles.input}
+                            />
+                            <TextInput
+                                multiline={Platform.OS === 'web' ? false : true}
+                                placeholder="API Key"
+                                onChangeText={(text: string) => { setApiKey(text.replace(/\s/g, '') as SecureStoreEntry)}}
+                                placeholderTextColor={theme === 'light' ? 'rgba(51, 51, 51, 0.5)' : 'rgba(224, 224, 224, 0.5)'}
+                                value={apiKey}
+                                style={styles.input}
+                            />
+                        </View>
+                        { getLoadingContext.isLoading ? 
+                            (<Loading/>) :
+                            (<Pressable
+                                onPress={handleLogin}
+                                style={styles.loginButton}
+                            >
+                                <Text style={styles.loginButtonText}>Log In</Text>
+                            </Pressable>)
+                        }
+
+                        <View style={styles.themeSwitchContainer}>
+                            <Icon
+                                name="sun-o"
+                                size={18}
+                                color={theme === 'dark' ? '#fff' : '#000'}
+                            />
+                            <Switch
+                                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                                thumbColor={theme === 'light' ? "#f4f3f4" : "#f5dd4b"}
+                                ios_backgroundColor="#3e3e3e"
+                                onValueChange={() => getThemeContext.toggleTheme()}
+                                value={theme === 'dark'}
+                            />
+                            <Icon
+                                name="moon-o"
+                                size={18}
+                                color={theme === 'dark' ? '#fff' : '#000'}
+                            />
+                        </View>
+                    </View>
+                    
+                </View>
+            }
+            <Footer />
+        </>
     );
 })
 

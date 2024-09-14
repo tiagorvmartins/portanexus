@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Switch, StyleSheet, Image } from 'react-native';
 import Icon from '@expo/vector-icons/FontAwesome';
 import { useGetThemeContext } from 'src/theme/store/useThemeContext';
+import { useAuthContext } from 'src/core/stores/auth/useAuthContext';
+import SecureStoreEntry from 'src/core/domain/enums/SecureStoreEntry';
 
 const Header = () => {
+    const authContext = useAuthContext();
     const getThemeContext = useGetThemeContext();
     const { theme } = getThemeContext;
     const styles = createStyles(theme);
+
+    useEffect(() => {
+        authContext.setProfileTheme(theme as SecureStoreEntry)
+    }, [authContext, theme])
+
     return (
         <View style={styles.headerContainer}>
             

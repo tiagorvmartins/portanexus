@@ -1,4 +1,4 @@
-# PortaNexus ![Android APK Workflow](https://github.com/tiagorvmartins/portanexus/actions/workflows/android.release.apk.yml/badge.svg) [![Download APK v0.1.0](https://img.shields.io/badge/download-v0.1.0-green)](https://github.com/tiagorvmartins/portanexus/releases/download/v0.1.0/portanexus-v0.1.0.apk)
+# PortaNexus ![Android APK Workflow](https://github.com/tiagorvmartins/portanexus/actions/workflows/android.release.apk.yml/badge.svg) [![Download APK v0.1.2](https://img.shields.io/badge/download-v0.1.2-green)](https://github.com/tiagorvmartins/portanexus/releases/download/v0.1.2/portanexus-v0.1.2.apk)
 
 <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/icon.png" width="15%" height="15%">
 
@@ -28,17 +28,15 @@ There is a Dockerfile which you can use to build the portanexus application.
 For convenience there is also a Docker image being maintained on docker hub [tiagorvmartins/portanexus](https://hub.docker.com/r/tiagorvmartins/portanexus-web)
 
 **Compose**
-
 ```
 services:
   portanexus:
-    image: tiagorvmartins/portanexus-web:v0.1.1
+    image: tiagorvmartins/portanexus-web:v0.1.2
     ports:
       - "8080:80  # You can change the binded port on host to your needs if needed
 ```
 
 **Reverse Proxy configuration to expose PortaNexus (sample using caddy)**
-
 ```
 portanexus.your-domain.ltd {
   reverse_proxy http://127.0.0.1:8080  # or the port that you changed to
@@ -74,7 +72,6 @@ portainer.your-domain.ltd {
   respond @options "" 200
 }
 ```
-
 
 
 

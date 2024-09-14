@@ -10,5 +10,13 @@ GetExitedContainersStoreContext.displayName = "GetExitedContainersStoreContext";
 export const GetStackContainersStoreContext = createContext<GetContainersStore | null>(null);
 GetStackContainersStoreContext.displayName = "GetStackContainersStoreContext";
 
+export const GetAllContainersStoreContext = createContext<GetContainersStore | null>(null);
+GetAllContainersStoreContext.displayName = "GetAllContainersStoreContext";
+
+export const GetSingleContainersStoreContext = createContext<GetContainersStore | null>(null);
+GetSingleContainersStoreContext.displayName = "GetSingleContainersStoreContext";
+
+
+
 
 

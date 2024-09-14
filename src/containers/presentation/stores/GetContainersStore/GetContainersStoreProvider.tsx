@@ -1,6 +1,6 @@
 import { PropsWithChildren } from "react";
 import { GetContainersStore } from "./GetContainersStore";
-import { GetRunningContainersStoreContext, GetExitedContainersStoreContext, GetStackContainersStoreContext } from "./GetContainersStoreContext";
+import { GetRunningContainersStoreContext, GetExitedContainersStoreContext, GetStackContainersStoreContext, GetAllContainersStoreContext, GetSingleContainersStoreContext } from "./GetContainersStoreContext";
 import { containerModuleContainer } from "src/containers/ContainerModule";
 
 
@@ -31,5 +31,25 @@ export const GetStackContainersStoreProvider = ({ children }: PropsWithChildren<
     >
       {children}
     </GetStackContainersStoreContext.Provider>
+  );
+};
+
+export const GetAllContainersStoreProvider = ({ children }: PropsWithChildren<any>) => {
+  return (
+    <GetAllContainersStoreContext.Provider
+      value={containerModuleContainer.getProvided(GetContainersStore)}
+    >
+      {children}
+    </GetAllContainersStoreContext.Provider>
+  );
+};
+
+export const GetSingleContainersStoreProvider = ({ children }: PropsWithChildren<any>) => {
+  return (
+    <GetSingleContainersStoreContext.Provider
+      value={containerModuleContainer.getProvided(GetContainersStore)}
+    >
+      {children}
+    </GetSingleContainersStoreContext.Provider>
   );
 };

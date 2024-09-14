@@ -14,7 +14,7 @@ export default class ContainerDto extends ResponseDto<ContainerEntity> {
   State!: any;
 
   @Expose()
-  Names!: string;
+  Names!: string[];
 
   @Expose()
   Status!: string;

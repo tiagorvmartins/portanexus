@@ -3,6 +3,9 @@ import { makeAutoObservable } from "mobx";
 import GetContainersStoreState from "../../types/GetContainersStoreState";
 import GetContainersUseCase from "src/containers/application/useCases/GetContainersUseCase";
 import GetContainersPayload from "src/containers/application/types/GetContainersPayload";
+import StartContainersUseCase from "src/containers/application/useCases/StartContainerUseCase";
+import StopContainersUseCase from "src/containers/application/useCases/StopContainerUseCase";
+import ControlContainerPayload from "src/containers/application/types/ControlContainerPayload";
 
 
 @injectable()
@@ -19,6 +22,10 @@ export class GetContainersStore implements GetContainersStoreState {
   constructor(
     @provided(GetContainersUseCase)
     private readonly getContainersUseCase: GetContainersUseCase,
+    @provided(StartContainersUseCase)
+    private readonly startContainerUseCase: StartContainersUseCase,
+    @provided(StopContainersUseCase)
+    private readonly stopContainerUseCase: StopContainersUseCase,
 
   ) {
     makeAutoObservable(this);
@@ -44,6 +51,10 @@ export class GetContainersStore implements GetContainersStoreState {
     Object.assign(this.filters, payload);
   };
 
+  resetFilters = (payload: Partial<GetContainersStoreState["filters"]>) => {
+    this.filters = payload;
+  };
+
   async getContainers(endpointId: number) {
     const payload: GetContainersPayload = {
       filters: this.filters,
@@ -57,6 +68,32 @@ export class GetContainersStore implements GetContainersStoreState {
         this.setResults(response.results);
         this.setCount(response.count);
       })
+      .finally(() => {
+        this.setIsLoading(false);
+      });
+  }
+
+  async stopContainer(endpointId: number, containerId: string) {
+    this.setIsLoading(true);
+    const data: ControlContainerPayload = {
+      endpointId,
+      containerId
+    };
+    return await this.stopContainerUseCase
+      .execute(data)
+      .finally(() => {
+        this.setIsLoading(false);
+      });
+  }
+
+  async startContainer(endpointId: number, containerId: string) {
+    this.setIsLoading(true);
+    const data: ControlContainerPayload = {
+      endpointId,
+      containerId
+    };
+    return await this.startContainerUseCase
+      .execute(data)
       .finally(() => {
         this.setIsLoading(false);
       });
