@@ -3,6 +3,8 @@ import { GetContainersStore } from "./presentation/stores/GetContainersStore/Get
 import { IContainersRepositoryToken } from "./domain/specifications/IContainersRepository"
 import ContainersRepository from "./infrastructure/implementations/ContainerRepository"
 import GetContainersUseCase from "./application/useCases/GetContainersUseCase"
+import StartContainersUseCase from "./application/useCases/StartContainerUseCase";
+import StopContainersUseCase from "./application/useCases/StopContainerUseCase";
 @module({
   providers: [
     {
@@ -10,6 +12,8 @@ import GetContainersUseCase from "./application/useCases/GetContainersUseCase"
       useClass: ContainersRepository,
     },
     GetContainersUseCase,
+    StartContainersUseCase,
+    StopContainersUseCase,
     {
       useClass: GetContainersStore,
       scope: "Transient",

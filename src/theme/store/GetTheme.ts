@@ -18,6 +18,9 @@ export class GetTheme {
     }
   }
 
+  setTheme = (theme: string) => {
+    this.theme = theme
+  }
 
   get isDarkMode() {
     return this.theme === 'dark'

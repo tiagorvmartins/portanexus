@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { useGetThemeContext } from "src/theme/store/useThemeContext";
 import { observer } from "mobx-react";
 import Loading from "src/core/presentation/components/Loading";
-import { useGetStackContainersStore } from "src/containers/presentation/stores/GetContainersStore/useGetContainersStore";
-import { GetStackContainersStoreProvider } from "src/containers/presentation/stores/GetContainersStore/GetContainersStoreProvider";
+import { useGetSingleContainersStore, useGetStackContainersStore } from "src/containers/presentation/stores/GetContainersStore/useGetContainersStore";
+import { GetAllContainersStoreProvider, GetSingleContainersStoreProvider, GetStackContainersStoreProvider } from "src/containers/presentation/stores/GetContainersStore/GetContainersStoreProvider";
 import { withProviders } from "src/utils/withProviders";
 import moment from "moment";
 import { useGetStacksStore } from "../stores/GetStacksStore/useGetStacksStore";
 import Icon from '@expo/vector-icons/FontAwesome';
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
 import showErrorToast from "src/utils/toast";
+import Container from "src/containers/presentation/components/Container";
+import ContainerEntity from "src/containers/domain/entities/ContainerEntity";
 
 const statusDot = (status: number | string, styles: any) => {
   if (status === 1 || status === "running") {
@@ -30,8 +32,7 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
   const { results: containerResults } = getContainersStore;
 
   const stackContainersFilter: Record<string, any> = {
-    status: ["running"],
-    label: [`com.docker.compose.project=immich`]
+    label: [`com.docker.compose.project=${stackName}`]
   }
 
   const [expanded, setExpanded] = useState(false);
@@ -41,7 +42,8 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
   const [ localLoading, setLocalLoading ] = useState(false)
 
   const getEndpointsStore = useGetEndpointsStore();
-
+  const singleContainersStore = useGetSingleContainersStore();
+  
   function ageInDaysAndHours(dateUnix: number): string {
     const momentDate = moment.unix(dateUnix)
     const currentDate = moment();
@@ -91,6 +93,7 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
     try {
       getContainersStore.mergeFilters(stackContainersFilter);
       await getContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
+      setStackContainers(getContainersStore.results)
     } catch {
       showErrorToast("There was an error fetching the stack containers", theme)
     } 
@@ -102,6 +105,28 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
     }
       
   }, [expanded]);
+
+  
+  const [stackContainers, setStackContainers] = useState<ContainerEntity[]>(containerResults);
+
+  const updateSpecificContainer = useCallback(async (containerId: number) => {
+    const singleContainerPayload: Record<string, any> = { id: [containerId] };
+
+    singleContainersStore.resetFilters(singleContainerPayload);
+    await singleContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
+    const { results: singleContainer } = singleContainersStore;
+
+    setStackContainers((prevValue) => {
+      const containerIndex = prevValue.findIndex(c => c.Id === containerId);
+      if (containerIndex !== -1) {
+        const updatedContainers = [...prevValue];
+        updatedContainers[containerIndex] = singleContainer[0];
+        return updatedContainers;
+      } else {
+        return [...prevValue, singleContainer[0]];
+      }
+    });
+  }, [getContainersStore, getEndpointsStore, singleContainersStore]);
 
   return (
     <View style={styles.card}>
@@ -148,21 +173,11 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
             ((getContainersStore.isLoading || (localLoading)) &&
               <Loading></Loading>)
             ||
-            (!getContainersStore.isLoading && containerResults.length > 0 &&
+            (!getContainersStore.isLoading && stackContainers.length > 0 &&
               <>
                 {
-                  stackContainersFilter && containerResults.map((section: any, index: any) => (
-                    <View key={index} style={styles.card}>
-                      <View style={styles.cardHeaderVertical}>
-                        <View style={styles.cardHeaderChild}>
-                          <View style={statusDot(section.State, styles)} />
-                          <Text style={styles.cardTitle}>{section.Names.map((c: string) => c.substring(1))}</Text>
-                        </View>
-                        <View style={styles.cardHeaderChild}>
-                          <Text style={styles.headerSubText}>{section.Status}</Text>
-                        </View>
-                      </View>
-                    </View>
+                  stackContainersFilter && stackContainers.map((section: any, index: any) => (
+                    <Container key={section.Id} containerName={section.Names[0].substring(1)} state={section.State} status={section.Status} containerId={section.Id} creationDate={section.Created} onUpdate={updateSpecificContainer} /> 
                   ))
                 }
               </>
@@ -297,4 +312,4 @@ const createStyles = (theme: string) => {
 };
 
 
-export default  withProviders(GetStackContainersStoreProvider)(Stack);
+export default  withProviders(GetStackContainersStoreProvider, GetAllContainersStoreProvider, GetSingleContainersStoreProvider)(Stack);

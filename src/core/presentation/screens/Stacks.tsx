@@ -8,19 +8,20 @@ import { withProviders } from "src/utils/withProviders";
 import { GetStacksStoreProvider } from "src/stacks/presentation/stores/GetStacksStore/GetStacksStoreProvider";
 import ContainerHeader from "src/containers/presentation/components/ContainerHeader";
 import { useAuthContext } from "src/core/stores/auth/useAuthContext";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useGetLoadingContext } from "src/loading/store/useLoadingContext";
-import Loading from "../components/Loading";
 import { useGetStacksStore } from "src/stacks/presentation/stores/GetStacksStore/useGetStacksStore";
 import { GetExitedContainersStoreProvider, GetRunningContainersStoreProvider } from "src/containers/presentation/stores/GetContainersStore/GetContainersStoreProvider";
 import { useGetExitedContainersStore, useGetRunningContainersStore } from "src/containers/presentation/stores/GetContainersStore/useGetContainersStore";
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
 import showErrorToast from "src/utils/toast";
 import { Platform, RefreshControl as NativeRefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
+import Footer from "../components/Footer";
 const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
-const HomepageScreen = observer(({navigation}: any) => {
+const StacksScreen = observer(({navigation}: any) => {
 
   const getLoadingContext = useGetLoadingContext();
 
@@ -94,7 +95,7 @@ const HomepageScreen = observer(({navigation}: any) => {
   };
 
   const onRefresh = async () => {
-
+    getLoadingContext.addLoadingComponent();
     setRefreshing(true);
     if(authContext.isLoggedIn){
       await Promise.all([
@@ -103,9 +104,9 @@ const HomepageScreen = observer(({navigation}: any) => {
         fetchRunningContainers(),
         fetchExitedContainers()
       ])
-    }
-
+    }    
     setRefreshing(false);
+    getLoadingContext.removeLoadingComponent();
   };
 
   useEffect(() => {
@@ -114,39 +115,35 @@ const HomepageScreen = observer(({navigation}: any) => {
     }
   }, [authContext.isLoggedIn, navigation]);
 
-  useEffect(() => {
-    if(authContext.isLoggedIn){
-      fetchStacks();
-      fetchRunningContainers();
-      fetchExitedContainers();
-    }
-  }, [getEndpointsStore.selectedEndpoint]);
-
-  useEffect(() => {
-    if(authContext.isLoggedIn){
-      fetchEndpoints();
-    }
-  }, []);
-
+  useFocusEffect(
+    useCallback(() => {
+      if (authContext.isLoggedIn) {
+        onRefresh();
+      }
+    }, [authContext.isLoggedIn])
+  );
 
   return (
+    <>
     <ScrollView 
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={onRefresh} // Triggered when the user pulls down
+          onRefresh={onRefresh}
         />
       }
       style={styles.container}>
       <AppHeader />
-      { getLoadingContext.isLoading ? 
-        <Loading/> :
+      { !getLoadingContext.isLoading ? 
         <>
           <ContainerHeader />
           <Stacks />
-        </>
+        </> : ""
       }
+
     </ScrollView>
+    <Footer />
+    </>
   );
 });
 
@@ -167,4 +164,4 @@ const createStyles = (theme: string) => {
 export default withProviders(
     GetStacksStoreProvider, 
     GetRunningContainersStoreProvider, 
-    GetExitedContainersStoreProvider)(HomepageScreen);
+    GetExitedContainersStoreProvider)(StacksScreen);

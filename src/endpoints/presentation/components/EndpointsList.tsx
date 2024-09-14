@@ -9,6 +9,7 @@ import { useGetLoadingContext } from "src/loading/store/useLoadingContext";
 import showErrorToast from 'src/utils/toast';
 import { Platform, RefreshControl as NativeRefreshControl } from 'react-native';
 import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
+import Footer from 'src/core/presentation/components/Footer';
 const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
 const EndpointLists = observer(({navigation}: any) => {
@@ -85,16 +86,20 @@ const EndpointLists = observer(({navigation}: any) => {
   );
 
   return (
-    <ScrollView  style={styles.container} refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
-      <AppHeader />
-      <View style={styles.endpointsView}>
-        {
-            getEndpointsStore.results.map((endpoint: any) => (
-                <EndpointItem key={endpoint.Id} selected={getEndpointsStore.selectedEndpoint === endpoint.Id} item={endpoint}/>
-            ))
-        }     
-      </View>
-    </ScrollView>
+    <>
+      <ScrollView  style={styles.container} refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
+        <AppHeader />
+        <View style={styles.endpointsView}>
+          {
+              getEndpointsStore.results.map((endpoint: any) => (
+                  <EndpointItem key={endpoint.Id} selected={getEndpointsStore.selectedEndpoint === endpoint.Id} item={endpoint}/>
+              ))
+          }     
+        </View>
+        
+      </ScrollView>
+      <Footer />
+    </>
   );
 });
 

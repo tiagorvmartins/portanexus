@@ -4,7 +4,7 @@
   "author": "tiagorvmartins",
   "license": "MIT",
   "main": "./index.js",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -13,7 +13,7 @@
     "web": "expo start --web",
     "web-production": "expo export -p web && npx workbox-cli generateSW workbox-config.js",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "eslint src"
   },
   "jest": {
     "preset": "jest-expo"

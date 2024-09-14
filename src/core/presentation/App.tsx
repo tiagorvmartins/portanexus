@@ -1,4 +1,3 @@
-import HomeScreen from 'src/core/presentation/screens/Home';
 import React from 'react';
 import Icon from '@expo/vector-icons/FontAwesome';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -11,6 +10,8 @@ import { observer } from 'mobx-react';
 import { useGetThemeContext } from 'src/theme/store/useThemeContext';
 import Toast from "react-native-toast-message";
 import LoginScreen from './screens/Login';
+import StacksScreen from 'src/core/presentation/screens/Stacks';
+import ContainersScreen from 'src/core/presentation/screens/Containers';
 import { AuthProvider } from '../stores/auth/AuthProvider';
 import { useAuthContext } from '../stores/auth/useAuthContext';
 import { GetLoadingProvider } from 'src/loading/store/LoadingProvider';
@@ -56,16 +57,17 @@ const DrawerNavigator = observer(() => {
   return (
     <Drawer.Navigator 
       screenOptions={{
-        drawerActiveTintColor: '#05E6F2',
-        drawerActiveBackgroundColor: '#05E6F2'+20,
-        drawerInactiveTintColor: '#05E6F2'+50,
-        drawerInactiveBackgroundColor: '#222222'+10,
+        drawerActiveTintColor: getThemeContext.theme === 'light' ? '#000000' : '#FFFFFF',
+        drawerActiveBackgroundColor: '#05E6F2'+80,
+        drawerInactiveTintColor: getThemeContext.theme === 'light' ? '#000000' : '#FFFFFF',
+        drawerInactiveBackgroundColor: '#05E6F2'+20,
         headerTintColor: getThemeContext.theme === 'dark' ? "#FFFFFF" : "#000000" 
       }}
       
-      initialRouteName="Home" drawerContent={props => <CustomDrawerContent {...props} ></CustomDrawerContent>}>
-      <Drawer.Screen name="Home" component={HomeScreen} options={{ headerTitle:'' }} />
+      initialRouteName="Containers" drawerContent={props => <CustomDrawerContent {...props} ></CustomDrawerContent>}>
       <Drawer.Screen name="Endpoints" component={EndpointLists} options={{ headerTitle:'' }} />
+      <Drawer.Screen name="Containers" component={ContainersScreen} options={{ headerTitle:'' }} />
+      <Drawer.Screen name="Stacks" component={StacksScreen} options={{ headerTitle:'' }} />
     </Drawer.Navigator>
   );
 })
