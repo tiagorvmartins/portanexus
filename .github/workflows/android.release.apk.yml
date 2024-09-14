@@ -38,7 +38,7 @@ jobs:
         run: eas build --platform android --local --non-interactive --profile preview --output "${{ github.workspace }}/portanexus-${{ github.ref_name}}.apk"
 
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: portanexus-${{ github.ref_name}}.apk
           path: ${{ github.workspace }}/portanexus-${{ github.ref_name}}.apk
