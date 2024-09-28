@@ -1,6 +1,6 @@
-import React, {useState } from "react";
+import React, { useState } from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
-import { useGetThemeContext } from "src/theme/store/useThemeContext";
+import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import { useGetAllContainersStore } from "../stores/GetContainersStore/useGetContainersStore";
 import Icon from '@expo/vector-icons/FontAwesome';
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
@@ -15,11 +15,10 @@ const statusDot = (status: number | string, styles: any) => {
   return styles.dotInactive
 }
 
-const Container = observer(({ containerName, status, containerId, state, onUpdate }: any) => {
-
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;
-  const styles = createStyles(theme);  
+const Container = observer(({ navigation, containerName, status, containerId, state, onUpdate }: any) => {
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;
+  const styles = createStyles(theme);
   const getAllContainersStore = useGetAllContainersStore();
   const getEndpointsStore = useGetEndpointsStore();
   const [ localLoading, setLocalLoading ] = useState(false)
@@ -28,7 +27,6 @@ const Container = observer(({ containerName, status, containerId, state, onUpdat
     setLocalLoading(true)
     try {
       await getAllContainersStore.startContainer(getEndpointsStore.selectedEndpoint, containerId);
-      await new Promise((resolve) => setTimeout(resolve, 1000))
       onUpdate(containerId);
     } catch {
       showErrorToast("There was an error starting the container", theme)
@@ -40,7 +38,6 @@ const Container = observer(({ containerName, status, containerId, state, onUpdat
     setLocalLoading(true)
     try {
       await getAllContainersStore.stopContainer(getEndpointsStore.selectedEndpoint, containerId);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       onUpdate(containerId);
     } catch {
       showErrorToast("There was an error stopping the container", theme)
@@ -63,19 +60,30 @@ const Container = observer(({ containerName, status, containerId, state, onUpdat
   return (
     <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <View style={styles.cardHeaderTitle}>
-            <View style={statusDot(state, styles)} />
-            <Text style={styles.cardTitle}>{containerName.length > 16 ? `...${containerName.substring(containerName.length-16, containerName.length)}` : containerName }</Text>
-          </View>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              navigation.navigate('ContainerLogs', { containerId })
+            }}
+          >
+            <View style={styles.cardHeaderTitle}>
+              <View style={statusDot(state, styles)} />
+              <Text style={styles.cardTitle}>{containerName.length > 24 ? `...${containerName.substring(containerName.length-16, containerName.length)}` : containerName }</Text>
+            </View>
+          </TouchableOpacity>
           <View style={styles.cardHeaderOperations}>
-            <TouchableOpacity onPress={() => restart(containerId)}>
+            <TouchableOpacity 
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={(e) => { e.stopPropagation(); restart(containerId) } }>
               <Icon
                 name="rotate-right"
                 size={16}
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => stop(containerId)} disabled={state !== "running"}>
+            <TouchableOpacity 
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={(e) => { e.stopPropagation(); stop(containerId)} } disabled={state !== "running"}>
               <Icon
                 name="stop"
                 size={16}
@@ -83,7 +91,9 @@ const Container = observer(({ containerName, status, containerId, state, onUpdat
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => start(containerId)} disabled={state === "running"}>
+            <TouchableOpacity 
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={(e) => { e.stopPropagation(); start(containerId) }} disabled={state === "running"}>
               <Icon
                 name="play"
                 size={16}
@@ -93,7 +103,7 @@ const Container = observer(({ containerName, status, containerId, state, onUpdat
             </TouchableOpacity>
           </View>
         </View>
-        <Text style={styles.headerSubText}>{status}</Text>
+        <Text style={styles.headerSubText}>{status || ''}</Text>
         {localLoading && <Loading></Loading>}
     </View>
   );
@@ -158,14 +168,13 @@ const createStyles = (theme: string) => {
     cardHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-around',
+      justifyContent: 'space-between',
       marginBottom: 8
     },
     cardHeaderTitle: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 8,
-      flex: 1
+      marginBottom: 8
     },
     cardHeaderOperations: {
       flexDirection: 'row',
@@ -173,7 +182,7 @@ const createStyles = (theme: string) => {
       justifyContent: 'space-evenly',
       marginBottom: 8,
       width: 120,
-    },
+    }, 
     dotActive: {
       width: 10,
       height: 10,

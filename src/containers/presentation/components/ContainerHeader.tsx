@@ -1,13 +1,13 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useGetRunningContainersStore, useGetExitedContainersStore } from "../stores/GetContainersStore/useGetContainersStore"
 import React from "react";
-import { useGetThemeContext } from "src/theme/store/useThemeContext";
+import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import { observer } from "mobx-react";
 
 const ContainerHeader = observer(() => {
 
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;  
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;  
   const styles = createStyles(theme);
   
   const getRunningContainersStore = useGetRunningContainersStore();
@@ -16,17 +16,16 @@ const ContainerHeader = observer(() => {
   return (
     <View style={styles.container}>
       <View style={styles.containerVertical}>
-      <Text style={styles.headerText}>{getRunningContainersStore.count}</Text>
-      <Text style={styles.headerSubText}>Running</Text>
+        <Text style={styles.headerText}>{getRunningContainersStore.count !== undefined ? getRunningContainersStore.count : '0'}</Text>
+        <Text style={styles.headerSubText}>Running</Text>
       </View>
       <View style={styles.containerVertical}>
-      <Text style={styles.headerText}>{getExitedContainersStore.count}</Text>
-      <Text style={styles.headerSubText}>Exited</Text>
+        <Text style={styles.headerText}>{getExitedContainersStore.count !== undefined ? getExitedContainersStore.count : '0'}</Text>
+        <Text style={styles.headerSubText}>Exited</Text>
       </View>
     </View>
   );
 });
-
 
 const createStyles = (theme: string) => {
   return StyleSheet.create({

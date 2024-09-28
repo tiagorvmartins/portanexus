@@ -5,4 +5,5 @@ export default interface ContainerEntity {
   State: string;
   Status: string;
   Portainer: any;
+  Collapsed: boolean;
 }

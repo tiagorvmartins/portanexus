@@ -7,11 +7,14 @@ import { plainToInstance } from "class-transformer";
 import IHttpClient, { IHttpClientToken } from "src/core/domain/specifications/IHttpAxiosConnector";
 import ContainerEntity from "src/containers/domain/entities/ContainerEntity";
 import ControlContainerPayload from "src/containers/application/types/ControlContainerPayload";
-
+import GetContainerLogsPayload from "src/containers/application/types/GetLogsPayload";
+import GetContainerLogsResponse from "src/containers/application/types/GetContainerLogsResponse";
+import { Buffer } from 'buffer';
+import uuid from 'react-native-uuid'
 
 @injectable()
 class ContainersRepository implements IContainersRepository {
-  private readonly endpointsBaseUrl = "/endpoints";  
+  private readonly endpointsBaseUrl = "/endpoints";
 
   constructor(
     @provided(IHttpClientToken) private readonly httpClient: IHttpClient
@@ -50,6 +53,57 @@ class ContainersRepository implements IContainersRepository {
 
   public async stop(data: ControlContainerPayload): Promise<void> {
     return await this.httpClient.post(`${this.endpointsBaseUrl}/${data.endpointId}/docker/containers/${data.containerId}/stop`);
+  }
+
+  public async getContainerLogs(data: GetContainerLogsPayload): Promise<GetContainerLogsResponse> {
+    try {
+      const arrayBuffer = await this.httpClient.get(`${this.endpointsBaseUrl}/${data.endpointId}/docker/containers/${data.containerId}/logs?stdout=true&stderr=true&since=${data.since}&until=${data.until}`, 
+      {
+        responseType: "arraybuffer"
+      }) as ArrayBuffer;
+
+      let buffer = new Uint8Array(arrayBuffer);
+      let cleanedLogs = this.processLogsBuffer(buffer);
+      
+      return {
+        results: cleanedLogs,
+        count: cleanedLogs.length
+      }
+
+    } catch {
+      return {
+        results: [],
+        count: 0
+      }
+    }
+  }
+
+  private processLogsBuffer(buffer: Uint8Array) {
+    let logs = [];
+    let currentPosition = 0;
+    
+    while (currentPosition + 8 <= buffer.length) {
+        const header = buffer.subarray(currentPosition, currentPosition + 8);
+        const frameSize = (
+            (header[4] << 24) |
+            (header[5] << 16) |
+            (header[6] << 8) |
+            header[7]
+        );
+        
+        const logDataStart = currentPosition + 8;
+        const logDataEnd = logDataStart + frameSize;
+
+        if (logDataEnd > buffer.length) break;
+
+        const logContent = buffer.subarray(logDataStart, logDataEnd);
+        const logText = Buffer.from(logContent).toString('utf-8');
+
+        logs.push({ id: uuid.v4() as string, text: logText});
+        currentPosition = logDataEnd;
+    }
+
+    return logs;
   }
 }
 

@@ -1,6 +1,6 @@
-# PortaNexus ![Android APK Workflow](https://github.com/tiagorvmartins/portanexus/actions/workflows/android.release.apk.yml/badge.svg) [![Download APK v0.1.2](https://img.shields.io/badge/download-v0.1.2-green)](https://github.com/tiagorvmartins/portanexus/releases/download/v0.1.2/portanexus-v0.1.2.apk)
+# PortaNexus ![Android APK Workflow](https://github.com/tiagorvmartins/portanexus/actions/workflows/android.release.apk.yml/badge.svg) [![Download APK v0.1.3](https://img.shields.io/badge/download-v0.1.3-green)](https://github.com/tiagorvmartins/portanexus/releases/download/v0.1.3/portanexus-v0.1.3.apk)
 
-<img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/icon.png" width="15%" height="15%">
+[![Demo](https://raw.githubusercontent.com/tiagorvmartins/portanexus/main/docs/demo/thumbnail.png)](https://raw.githubusercontent.com/tiagorvmartins/portanexus/main/docs/demo/video.mp4)
 
 ## A mobile connection for your Portainer instance
 
@@ -31,7 +31,7 @@ For convenience there is also a Docker image being maintained on docker hub [tia
 ```
 services:
   portanexus:
-    image: tiagorvmartins/portanexus-web:v0.1.2
+    image: tiagorvmartins/portanexus-web:v0.1.3
     ports:
       - "8080:80  # You can change the binded port on host to your needs if needed
 ```
@@ -75,7 +75,7 @@ portainer.your-domain.ltd {
 
 
 
-## Screens Showcase
+## Screens Showcase (v0.1.3)
 
 ### Login Screen
 
@@ -83,23 +83,42 @@ Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
 | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/login_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/login_dark.png" width="270" height="600"> |
 
+### Drawer Screen
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/drawer_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/drawer_dark.png" width="270" height="600"> |
+
 ### Endpoints Screen
 
 Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
 | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/endpoints_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/endpoints_dark.png" width="270" height="600"> |
 
-### Home Screen (Stacks)
+### Containers Screen
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/containers_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/containers_dark.png" width="270" height="600"> |
+
+### Stacks Screen
 
 Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
 | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/stacks_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/stacks_dark.png" width="270" height="600"> |
 
-### Home Screen (Stacks expanded)
+### Container Logs Screen
 
 Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
-| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/stacks_expanded_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/stacks_expanded_dark.png" width="270" height="600"> |
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/logs_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/logs_dark.png" width="270" height="600"> |
+
+### Settings Screen
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/settings_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/settings_dark.png" width="270" height="600"> |
+
 
 ## Planned Roadmap
 

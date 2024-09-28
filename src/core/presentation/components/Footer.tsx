@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
-import { useGetThemeContext } from 'src/theme/store/useThemeContext';
+import { useGetSettingsContext } from 'src/settings/store/useSettingsContext';
 
 const Footer = () => {
   const appVersion = Constants.expoConfig?.version;
   const appName = Constants.expoConfig?.name;
 
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;
 
   const styles = createStyles(theme);
 

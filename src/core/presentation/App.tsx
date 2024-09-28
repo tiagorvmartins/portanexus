@@ -3,11 +3,11 @@ import Icon from '@expo/vector-icons/FontAwesome';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { GetThemeProvider } from 'src/theme/store/ThemeProvider';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Button } from 'react-native';
+import { GetSettingsProvider } from 'src/settings/store/SettingsProvider';
 import { withProviders } from 'src/utils/withProviders';
 import { observer } from 'mobx-react';
-import { useGetThemeContext } from 'src/theme/store/useThemeContext';
+import { useGetSettingsContext } from 'src/settings/store/useSettingsContext';
 import Toast from "react-native-toast-message";
 import LoginScreen from './screens/Login';
 import StacksScreen from 'src/core/presentation/screens/Stacks';
@@ -20,13 +20,15 @@ import EndpointLists from 'src/endpoints/presentation/components/EndpointsList';
 import { GetEndpointsStoreProvider } from 'src/endpoints/presentation/stores/GetContainersStore/GetEndpointsStoreProvider';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import SettingsScreen from './screens/Settings';
+import ContainerLogs from 'src/containers/presentation/components/ContainerLogs';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 
 function CustomDrawerContent(props: any) {
-  const getThemeContext = useGetThemeContext();  
-  const { theme } = getThemeContext;
+  const getSettingsContext = useGetSettingsContext();  
+  const { theme } = getSettingsContext;
   const styles = createStyles(theme);
 
   const authContext = useAuthContext();
@@ -52,22 +54,26 @@ function CustomDrawerContent(props: any) {
 }
 
 const DrawerNavigator = observer(() => {
-  const getThemeContext = useGetThemeContext();
+  const getSettingsContext = useGetSettingsContext();
   
   return (
-    <Drawer.Navigator 
+    <Drawer.Navigator      
+      backBehavior={"history"}
       screenOptions={{
-        drawerActiveTintColor: getThemeContext.theme === 'light' ? '#000000' : '#FFFFFF',
+        headerShown: false,
+        swipeEdgeWidth: 300,
+        drawerActiveTintColor: getSettingsContext.theme === 'light' ? '#000000' : '#FFFFFF',
         drawerActiveBackgroundColor: '#05E6F2'+80,
-        drawerInactiveTintColor: getThemeContext.theme === 'light' ? '#000000' : '#FFFFFF',
+        drawerInactiveTintColor: getSettingsContext.theme === 'light' ? '#000000' : '#FFFFFF',
         drawerInactiveBackgroundColor: '#05E6F2'+20,
-        headerTintColor: getThemeContext.theme === 'dark' ? "#FFFFFF" : "#000000" 
+        headerTintColor: getSettingsContext.theme === 'dark' ? "#FFFFFF" : "#000000" 
       }}
-      
       initialRouteName="Containers" drawerContent={props => <CustomDrawerContent {...props} ></CustomDrawerContent>}>
       <Drawer.Screen name="Endpoints" component={EndpointLists} options={{ headerTitle:'' }} />
-      <Drawer.Screen name="Containers" component={ContainersScreen} options={{ headerTitle:'' }} />
-      <Drawer.Screen name="Stacks" component={StacksScreen} options={{ headerTitle:'' }} />
+      <Drawer.Screen name="Containers" component={ContainersScreen} options={{ unmountOnBlur: true, headerTitle:'' }} />
+      <Drawer.Screen name="Stacks" component={StacksScreen} options={{ unmountOnBlur: true, headerTitle:'' }} />
+      <Drawer.Screen name="Settings" component={SettingsScreen} options={{ headerTitle:'' }} />
+      <Drawer.Screen name="ContainerLogs" component={ContainerLogs} options={{ unmountOnBlur: true, headerTitle:'', drawerItemStyle: { display: 'none' } }}  />
     </Drawer.Navigator>
   );
 })
@@ -75,11 +81,11 @@ const DrawerNavigator = observer(() => {
 
 
 const App = observer(() => {
-  const getThemeContext = useGetThemeContext();
+  const getSettingsContext = useGetSettingsContext();
   return (
     <>
     <SafeAreaProvider>
-      <NavigationContainer theme={getThemeContext.isDarkMode ? DarkTheme : DefaultTheme}>
+      <NavigationContainer theme={getSettingsContext.isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Root" component={DrawerNavigator} options={{ headerShown: false }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
@@ -87,7 +93,7 @@ const App = observer(() => {
       </NavigationContainer>
     </SafeAreaProvider>
       {Platform.OS === 'web' ? (
-        <ToastContainer position="top-center" theme={getThemeContext.theme} />
+        <ToastContainer position="top-center" theme={getSettingsContext.theme} />
       ) : (
         <Toast />
       )}
@@ -131,4 +137,4 @@ const createStyles = (theme: string) => {
   });
 };
 
-export default withProviders(GetThemeProvider, AuthProvider, GetLoadingProvider, GetEndpointsStoreProvider)(App);
+export default withProviders(GetSettingsProvider, AuthProvider, GetLoadingProvider, GetEndpointsStoreProvider)(App);
