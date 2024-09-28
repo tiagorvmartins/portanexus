@@ -1,15 +1,15 @@
-import React, { useCallback, useState } from "react";
-import { StyleSheet, ScrollView } from "react-native";
-import { useGetThemeContext } from "src/theme/store/useThemeContext";
+import React, { useCallback, useEffect, useState } from "react";
+import { StyleSheet, FlatList, RefreshControl } from "react-native";
+import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import { useGetAllContainersStore, useGetSingleContainersStore } from "../stores/GetContainersStore/useGetContainersStore";
 import { observer } from "mobx-react";
 import Container from "./Container";
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
 import ContainerEntity from "src/containers/domain/entities/ContainerEntity";
 
-const Containers = observer(() => {  
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;
+const Containers = observer(({navigation, refreshing, onRefresh}: any) => {  
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;
   const styles = createStyles(theme);
 
   const getAllContainersStore = useGetAllContainersStore();
@@ -17,6 +17,12 @@ const Containers = observer(() => {
   const { results } = getAllContainersStore;
   const singleContainersStore = useGetSingleContainersStore();
   const [containers, setContainers] = useState<ContainerEntity[]>(results);
+  const [ updateContainers, setUpdateContainers ] = useState<boolean>(false);
+
+  useEffect(() => {
+    setContainers(results)
+    setUpdateContainers(!updateContainers)
+  }, [results]);
 
   const updateSpecificContainer = useCallback(async (containerId: number) => {
     const singleContainerPayload: Record<string, any> = { id: [containerId] };
@@ -35,18 +41,49 @@ const Containers = observer(() => {
         return [...prevValue, singleContainer[0]];
       }
     });
+    setUpdateContainers(!updateContainers)
+    onRefresh()
+
   }, [getEndpointsStore, singleContainersStore]);
 
-  
+  const closeAllExceptSpecificContainer = useCallback(async (containerId: number) => {
+    setContainers((prevValue) => {
+      return prevValue.map(container => ({
+        ...container,
+        Collapsed: container.Id === containerId ? !((container as any).Collapsed) : true
+      }));
+    });
+    setUpdateContainers(!updateContainers)
+  }, [containers]);
+
   return (
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        {
-          containers.map((section:any) => (
-              <Container key={section.Id} containerName={section.Names[0].substring(1)} state={section.State} status={section.Status} containerId={section.Id} creationDate={section.Created} onUpdate={updateSpecificContainer} /> 
-          ))
-        }
-      </ScrollView>
-  );
+        <FlatList
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
+          }
+          nestedScrollEnabled
+          data={containers}
+          renderItem={({item}) => 
+              <Container
+                  navigation={navigation}
+                  containerName={item.Names[0].substring(1)} 
+                  collapsed={item.Collapsed} 
+                  state={item.State} 
+                  status={item.Status} 
+                  containerId={item.Id} 
+                  creationDate={item.Created} 
+                  onUpdate={updateSpecificContainer} 
+                  onClick={closeAllExceptSpecificContainer}
+                /> 
+          }
+          keyExtractor={item => item.Id.toString()}
+          style={styles.scrollView}
+          extraData={updateContainers}>
+        </FlatList>
+      )
 });
 
 const createStyles = (theme: string) => {
@@ -73,9 +110,9 @@ const createStyles = (theme: string) => {
     },
     scrollView: {
       flexGrow: 1,
-      paddingBottom: 30,
+      paddingBottom: 0,
       backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',
-      padding: 16
+      marginBottom: 10,
     },
     section: {
       marginBottom: 32

@@ -1,27 +1,41 @@
-import React from "react";
-import { StyleSheet, ScrollView } from "react-native";
-import { useGetThemeContext } from "src/theme/store/useThemeContext";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, RefreshControl, FlatList } from "react-native";
+import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import { useGetStacksStore } from "../stores/GetStacksStore/useGetStacksStore";
 import { observer } from "mobx-react";
 import Stack from "./Stack";
 
-const Stacks = observer(() => {
+const Stacks = observer(({navigation, refreshing, onRefresh}: any) => {
 
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;
   const styles = createStyles(theme);
 
   const getStacksStore = useGetStacksStore();
   const { results } = getStacksStore;
-  
+  const [ updateStacks, setUpdateStacks ] = useState<boolean>(false);
+
+  useEffect(() => {
+    setUpdateStacks(!updateStacks)
+  }, [results]);
+
   return (
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        {
-          results.map((section:any) => (
-              <Stack key={section.Id} stackName={section.Name} status={section.Status} stackId={section.Id} creationDate={section.CreationDate} /> 
-          ))
-        }
-      </ScrollView>
+      <FlatList
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
+          }
+          nestedScrollEnabled
+          data={results}
+          renderItem={({item}) => 
+              <Stack navigation={navigation} key={item.Id} stackName={item.Name} status={item.Status} stackId={item.Id} creationDate={item.CreationDate} /> 
+          }
+          keyExtractor={item => item.Id.toString()}
+          style={styles.scrollView}
+          extraData={updateStacks}>
+      </FlatList>
   );
 });
 
@@ -49,9 +63,9 @@ const createStyles = (theme: string) => {
     },
     scrollView: {
       flexGrow: 1,
-      paddingBottom: 30,
-      backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',
-      padding: 16
+      paddingBottom: 0,
+      backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',      
+      marginBottom: 10,
     },
     section: {
       marginBottom: 32

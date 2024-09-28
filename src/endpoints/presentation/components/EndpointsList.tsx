@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import React, { useEffect, useState } from "react";
-import { useGetThemeContext } from "src/theme/store/useThemeContext";
+import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import { observer } from "mobx-react";
 import { useGetEndpointsStore } from "../stores/GetContainersStore/useGetEndpointsStore";
 import { useAuthContext } from 'src/core/stores/auth/useAuthContext';
@@ -15,8 +15,8 @@ const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefresh
 const EndpointLists = observer(({navigation}: any) => {
   const getLoadingContext = useGetLoadingContext();
 
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;  
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;  
   const styles = createStyles(theme);
 
   const getEndpointsStore = useGetEndpointsStore();
@@ -88,15 +88,14 @@ const EndpointLists = observer(({navigation}: any) => {
   return (
     <>
       <ScrollView  style={styles.container} refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
-        <AppHeader />
+        <AppHeader navigation={navigation} />
         <View style={styles.endpointsView}>
           {
               getEndpointsStore.results.map((endpoint: any) => (
                   <EndpointItem key={endpoint.Id} selected={getEndpointsStore.selectedEndpoint === endpoint.Id} item={endpoint}/>
               ))
-          }     
+          }
         </View>
-        
       </ScrollView>
       <Footer />
     </>

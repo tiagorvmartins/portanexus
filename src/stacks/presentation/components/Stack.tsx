@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
-import { useGetThemeContext } from "src/theme/store/useThemeContext";
+import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import { observer } from "mobx-react";
 import Loading from "src/core/presentation/components/Loading";
 import { useGetSingleContainersStore, useGetStackContainersStore } from "src/containers/presentation/stores/GetContainersStore/useGetContainersStore";
@@ -14,18 +14,23 @@ import showErrorToast from "src/utils/toast";
 import Container from "src/containers/presentation/components/Container";
 import ContainerEntity from "src/containers/domain/entities/ContainerEntity";
 
-const statusDot = (status: number | string, styles: any) => {
-  if (status === 1 || status === "running") {
+const statusDot = (fetching: boolean, stackContainers: ContainerEntity[], status: string, styles: any) => {
+  if (fetching)
+    return styles.dotLoading
+
+  if (stackContainers.length > 0 && stackContainers.every(p => p.State === "running"))
     return styles.dotActive
-  }
-  return styles.dotInactive
+
+  if (stackContainers.length > 0 && stackContainers.find(p => p.State !== "running"))
+    return styles.dotPartialActive
+
+  if (stackContainers && stackContainers.length === 0 && status !== "1")
+    return styles.dotInactive
 }
 
-const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
-
-  
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;
+const Stack = observer(({ navigation, stackName, status, stackId, creationDate }: any) => {
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;
   const styles = createStyles(theme);
 
   const getContainersStore = useGetStackContainersStore();
@@ -40,6 +45,7 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
   const getStacksStore = useGetStacksStore();
 
   const [ localLoading, setLocalLoading ] = useState(false)
+  const [ fetching, setFetching ] = useState(true)
 
   const getEndpointsStore = useGetEndpointsStore();
   const singleContainersStore = useGetSingleContainersStore();
@@ -58,6 +64,7 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
       await getStacksStore.startStack(stackId);
       await getStacksStore.getStacks()
       setExpanded(false);
+      fetch()
     } catch {
       showErrorToast("There was an error starting the stack", theme)
     }
@@ -70,6 +77,7 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
       await getStacksStore.stopStack(stackId);
       await getStacksStore.getStacks()
       setExpanded(false);
+      fetch()
     } catch {
       showErrorToast("There was an error stopping the stack", theme)
     }
@@ -81,8 +89,9 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
     try {
       await getStacksStore.stopStack(stackId);
       await getStacksStore.startStack(stackId);
-      await getStacksStore.getStacks()
+      await getStacksStore.getStacks()      
       setExpanded(false);
+      fetch()
     } catch {
       showErrorToast("There was an error restarting the stack", theme)
     }
@@ -93,18 +102,20 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
     try {
       getContainersStore.mergeFilters(stackContainersFilter);
       await getContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
-      setStackContainers(getContainersStore.results)
+      setStackContainers(getContainersStore.results.map(container => ({
+        ...container, 
+        collapsed: true,
+      })))
     } catch {
       showErrorToast("There was an error fetching the stack containers", theme)
-    } 
+    } finally {
+      setFetching(false)
+    }
   }
 
   useEffect(() => {
-    if(expanded){
       fetch()
-    }
-      
-  }, [expanded]);
+  }, []);
 
   
   const [stackContainers, setStackContainers] = useState<ContainerEntity[]>(containerResults);
@@ -128,28 +139,38 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
     });
   }, [getContainersStore, getEndpointsStore, singleContainersStore]);
 
+  const closeAllExceptSpecificContainer = useCallback(async (containerId: number) => {
+    setStackContainers((prevValue) => {
+      return prevValue.map(container => ({
+        ...container,
+        collapsed: container.Id === containerId ? !((container as any).collapsed) : true
+      }));
+    });
+  }, [stackContainers]);
+
   return (
     <View style={styles.card}>
       <TouchableOpacity
         disabled={status !== 1}
-        onPress={() => {
+        onPress={(e) => {
           setExpanded(!expanded);
+          e.stopPropagation();
         }}
       >
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderTitle}>
-            <View style={statusDot(status, styles)} />
+            <View style={statusDot(fetching, stackContainers, status, styles)} />
             <Text style={styles.cardTitle}>{stackName}</Text>
           </View>
           <View style={styles.cardHeaderOperations}>
-            <TouchableOpacity onPress={() => restart(stackId)}>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); restart(stackId) }}>
               <Icon
                 name="rotate-right"
                 size={16}
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => stop(stackId)} disabled={status !== 1}>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); stop(stackId)}} disabled={status !== 1}>
               <Icon
                 name="stop"
                 size={16}
@@ -157,7 +178,7 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => start(stackId)} disabled={status === 1}>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); start(stackId)}} disabled={status === 1}>
               <Icon
                 name="play"
                 size={16}
@@ -176,8 +197,8 @@ const Stack = observer(({ stackName, status, stackId, creationDate }: any) => {
             (!getContainersStore.isLoading && stackContainers.length > 0 &&
               <>
                 {
-                  stackContainersFilter && stackContainers.map((section: any, index: any) => (
-                    <Container key={section.Id} containerName={section.Names[0].substring(1)} state={section.State} status={section.Status} containerId={section.Id} creationDate={section.Created} onUpdate={updateSpecificContainer} /> 
+                  stackContainersFilter && stackContainers.map((section: any) => (
+                    <Container navigation={navigation} key={section.Id} containerName={section.Names[0].substring(1)} collapsed={section.collapsed} state={section.State} status={section.Status} containerId={section.Id} creationDate={section.Created} onUpdate={updateSpecificContainer} onClick={closeAllExceptSpecificContainer} /> 
                   ))
                 }
               </>
@@ -276,6 +297,21 @@ const createStyles = (theme: string) => {
       height: 10,
       borderRadius: 5,
       backgroundColor: '#ff0000',
+      marginRight: 8
+    },
+    dotPartialActive: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#FFFF00',
+      marginRight: 8
+    },
+    dotLoading: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      borderWidth: 2,
+      borderColor: 'light' ? '#333333' : '#e0e0e0',
       marginRight: 8
     },
     cardTitle: {

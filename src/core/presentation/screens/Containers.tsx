@@ -1,7 +1,7 @@
 
-import { StyleSheet, ScrollView } from "react-native";
+import { StyleSheet, ScrollView, View, FlatList } from "react-native";
 import AppHeader from "src/core/presentation/components/AppHeader";
-import { useGetThemeContext } from "src/theme/store/useThemeContext";
+import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import Containers from "src/containers/presentation/components/Containers";
 import { observer } from "mobx-react";
 import { withProviders } from "src/utils/withProviders";
@@ -14,17 +14,13 @@ import { GetExitedContainersStoreProvider, GetRunningContainersStoreProvider } f
 import { useGetAllContainersStore, useGetExitedContainersStore, useGetRunningContainersStore } from "src/containers/presentation/stores/GetContainersStore/useGetContainersStore";
 import { useGetEndpointsStore } from "src/endpoints/presentation/stores/GetContainersStore/useGetEndpointsStore";
 import showErrorToast from "src/utils/toast";
-import { Platform, RefreshControl as NativeRefreshControl } from 'react-native';
-import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
 import { useFocusEffect } from '@react-navigation/native';
 import Footer from "../components/Footer";
-const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
 const ContainersScreen = observer(({navigation}: any) => {  
   const getLoadingContext = useGetLoadingContext();
-
-  const getThemeContext = useGetThemeContext();
-  const { theme } = getThemeContext;
+  const getSettingsContext = useGetSettingsContext();
+  const { theme } = getSettingsContext;
 
   const styles = createStyles(theme);
   const authContext = useAuthContext();
@@ -67,7 +63,7 @@ const ContainersScreen = observer(({navigation}: any) => {
   };
 
   const fetchContainers = async () => {
-    try {      
+    try {
       getLoadingContext.addLoadingComponent();
       await getAllContainersStore.getContainers(getEndpointsStore.selectedEndpoint);
     } catch {
@@ -127,28 +123,12 @@ const ContainersScreen = observer(({navigation}: any) => {
 
 
   return (
-    <>
-      <ScrollView 
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
-        style={styles.container}>
-        <AppHeader />
-        { 
-          !getLoadingContext.isLoading ?
-          <>
-            <ContainerHeader />
-            <Containers />
-          </> :
-          ""
-        }
-        
-      </ScrollView>
+    <View style={styles.container} >
+       <AppHeader navigation={navigation} />
+       <ContainerHeader />
+       <Containers navigation={navigation} onRefresh={onRefresh} refreshing={refreshing} />
       <Footer />
-    </>
+    </View>
   );
 });
 

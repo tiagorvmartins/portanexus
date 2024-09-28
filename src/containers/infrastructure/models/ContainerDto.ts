@@ -29,7 +29,8 @@ export default class ContainerDto extends ResponseDto<ContainerEntity> {
       Created: this.Created,
       State: this.State,
       Portainer: this.Portainer,
-      Status: this.Status
+      Status: this.Status,
+      Collapsed: true
     };
   }
 }

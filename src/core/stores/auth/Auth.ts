@@ -33,6 +33,42 @@ export class Auth {
       return theme
     }
     return "light"
+  }
+
+  setRefreshInterval = async (refreshInterval: SecureStoreEntry) => {
+    await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.LGOS_REFRESH_INTERVAL, refreshInterval);
+  }
+
+  getRefreshInterval = async () => {
+    const refreshInterval = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.LGOS_REFRESH_INTERVAL);
+    if (refreshInterval) {
+      return parseInt(refreshInterval, 10)
+    }
+    return 1000
+  }
+
+  setLogsSince = async (refreshInterval: SecureStoreEntry) => {
+    await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.LOGS_SINCE, refreshInterval);
+  }
+
+  getLogsSince = async () => {
+    const logsSince = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.LOGS_SINCE);
+    if (logsSince) {
+      return parseInt(logsSince, 10)
+    }
+    return 60000
+  }
+
+  setLogsMaxLines = async (logsMaxLines: SecureStoreEntry) => {
+    await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.LOGS_MAX_LINES, logsMaxLines);
+  }
+
+  getLogsMaxLines = async () => {
+    const logsMaxLines = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.LOGS_MAX_LINES);
+    if (logsMaxLines) {
+      return parseInt(logsMaxLines, 10)
+    }
+    return 100
   } 
 
   setLoginApiKey = async (hostUrl: SecureStoreEntry, apiKey: SecureStoreEntry) => {

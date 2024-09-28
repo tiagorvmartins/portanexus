@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react';
-import { View, Switch, StyleSheet, Image } from 'react-native';
+import { View, Switch, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Icon from '@expo/vector-icons/FontAwesome';
-import { useGetThemeContext } from 'src/theme/store/useThemeContext';
+import { useGetSettingsContext } from 'src/settings/store/useSettingsContext';
 import { useAuthContext } from 'src/core/stores/auth/useAuthContext';
 import SecureStoreEntry from 'src/core/domain/enums/SecureStoreEntry';
 
-const Header = () => {
+const Header = ({navigation}: any) => {
     const authContext = useAuthContext();
-    const getThemeContext = useGetThemeContext();
-    const { theme } = getThemeContext;
+    const getSettingsContext = useGetSettingsContext();
+    const { theme } = getSettingsContext;
     const styles = createStyles(theme);
 
     useEffect(() => {
@@ -17,8 +17,9 @@ const Header = () => {
 
     return (
         <View style={styles.headerContainer}>
-            
-            <Image style={styles.logo} source={theme === 'light' ? require('src/core/presentation/images/porta-nexus-light.png') : require('src/core/presentation/images/porta-nexus-dark.png')} />
+            <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                <Image style={styles.logo} source={theme === 'light' ? require('src/core/presentation/images/porta-nexus-light.png') : require('src/core/presentation/images/porta-nexus-dark.png')} />
+            </TouchableOpacity>
             <View style={styles.headerContainer}>
                 <Icon
                     name="sun-o"
@@ -29,7 +30,7 @@ const Header = () => {
                     trackColor={{ false: "#767577", true: "#81b0ff" }}
                     thumbColor={theme === 'light' ? "#f4f3f4" : "#f5dd4b"}
                     ios_backgroundColor="#3e3e3e"
-                    onValueChange={() => getThemeContext.toggleTheme()}
+                    onValueChange={() => getSettingsContext.toggleTheme()}
                     value={theme === 'dark'}
                 />
                 <Icon

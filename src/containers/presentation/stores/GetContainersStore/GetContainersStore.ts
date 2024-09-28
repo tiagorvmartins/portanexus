@@ -6,6 +6,9 @@ import GetContainersPayload from "src/containers/application/types/GetContainers
 import StartContainersUseCase from "src/containers/application/useCases/StartContainerUseCase";
 import StopContainersUseCase from "src/containers/application/useCases/StopContainerUseCase";
 import ControlContainerPayload from "src/containers/application/types/ControlContainerPayload";
+import GetContainerLogsPayload from "src/containers/application/types/GetLogsPayload";
+import GetContainerLogsResponse from "src/containers/application/types/GetContainerLogsResponse";
+import GetContainerLogsUseCase from "src/containers/application/useCases/GetContainerLogsUseCase";
 
 
 @injectable()
@@ -26,6 +29,8 @@ export class GetContainersStore implements GetContainersStoreState {
     private readonly startContainerUseCase: StartContainersUseCase,
     @provided(StopContainersUseCase)
     private readonly stopContainerUseCase: StopContainersUseCase,
+    @provided(GetContainerLogsUseCase)
+    private readonly getContainerLogsUseCase: GetContainerLogsUseCase,
 
   ) {
     makeAutoObservable(this);
@@ -97,5 +102,18 @@ export class GetContainersStore implements GetContainersStoreState {
       .finally(() => {
         this.setIsLoading(false);
       });
+  }
+
+  async getContainerLogs(endpointId: number, containerId: string, since: number, until: number): Promise<GetContainerLogsResponse> {
+    this.setIsLoading(true);
+    const data: GetContainerLogsPayload = {
+      endpointId,
+      containerId,
+      since,
+      until
+    };
+    const logs = await this.getContainerLogsUseCase.execute(data)
+    this.setIsLoading(false);
+    return logs;
   }
 }
