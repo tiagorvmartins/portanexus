@@ -8,6 +8,7 @@ import { useGetAllContainersStore } from '../stores/GetContainersStore/useGetCon
 import { ScrollView as RNScrollView } from 'react-native';
 import { observer } from 'mobx-react';
 import { Log } from 'src/containers/application/types/GetContainerLogsResponse';
+import { Stats } from 'src/containers/application/types/GetContainerStatsResponse';
 import { GetAllContainersStoreProvider, GetExitedContainersStoreProvider, GetRunningContainersStoreProvider, GetSingleContainersStoreProvider } from '../stores/GetContainersStore/GetContainersStoreProvider';
 import { withProviders } from 'src/utils/withProviders';
 import AppHeader from 'src/core/presentation/components/AppHeader';
@@ -22,8 +23,10 @@ const ContainerLogs = observer( ({ route, navigation }: any) => {
   let containerId = route.params.containerId
   const getAllContainersStore = useGetAllContainersStore();
 
-  const initialLogs = [] as Log[]
+  const initialLogs = [] as Log[];
+  const initialStats = [] as Stats[];
   const [logs, setLogs] = useState(initialLogs);
+  const [stats, setStats] = useState(initialStats);
   const [ localLoading, setLocalLoading ] = useState(false);
   const getEndpointsStore = useGetEndpointsStore();
   const scrollViewRef = useRef<RNScrollView | null>(null);
@@ -32,6 +35,13 @@ const ContainerLogs = observer( ({ route, navigation }: any) => {
   let until = Math.floor(Date.now() / 1000);
 
   const [fireLogsChange, setFireLogsChange] = useState(false);
+
+  const getContainerStats = async () => {
+    const statsResponse = await getAllContainersStore.getContainerStats(getEndpointsStore.selectedEndpoint, containerId);
+    if (statsResponse.results && statsResponse.results.length) {
+      setStats(statsResponse.results);
+    }
+  }
 
   const getContainerLogs = async (initialLoading: boolean) => {
     
@@ -74,10 +84,12 @@ const ContainerLogs = observer( ({ route, navigation }: any) => {
       
       if (containerId) {
         getContainerLogs(true);
+        getContainerStats()
       }
 
       intervalId = setInterval(() => {
         getContainerLogs(false)
+        getContainerStats()
       }, logsInterval)
 
       return () => {
@@ -91,13 +103,6 @@ const ContainerLogs = observer( ({ route, navigation }: any) => {
     since = logsSince === 0 ? 0 : Math.floor(Date.now() / 1000) - (logsSince / 1000)
   }, [logsSince]);
 
-  // useEffect(() => {
-  //   if (logs && logs.length ) {
-  //     setLocalLoading(false)
-  //   }
-  // }, [logs]);
-  
-  
   const LogItem = ({text}: any) => (
     <Text style={styles.logs}>{text}</Text>
   );
@@ -105,6 +110,17 @@ const ContainerLogs = observer( ({ route, navigation }: any) => {
   return (
     <View style={styles.viewContainer}>
       <AppHeader navigation={navigation} />
+      { stats.length > 0 ? (
+        <View style={styles.headerContainer}>
+        {stats.map((stat: any) => <View key={stat.label} style={styles.usageContainer}>
+          <Text style={styles.usageLabel}>{stat.label}</Text>
+          <Text style={styles.usageText}>{stat.value}%</Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progress, { width: `${stat.value}%`, backgroundColor: parseFloat(stat.value) > 80 ? 'red' : 'green' }]} />
+          </View>
+        </View>)}
+      </View>) : ""
+      }
       <ScrollView 
         ref={scrollViewRef} 
         onContentSizeChange={() => { scrollViewRef.current?.scrollToEnd({ animated: false }) } } 
@@ -127,6 +143,36 @@ const ContainerLogs = observer( ({ route, navigation }: any) => {
 
 const createStyles = (theme: string) => {
   return StyleSheet.create({
+    headerContainer: {
+      marginHorizontal: 10,
+      backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',
+    },
+    usageContainer: {
+      flexDirection: 'column',
+      marginBottom: 10,
+    },
+    usageLabel: {
+      fontSize: 14,
+      color: theme === 'light' ? '#333333' : '#e0e0e0',
+      marginBottom: 4,
+    },
+    usageText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme === 'light' ? '#333333' : '#e0e0e0',
+    },
+    progressBar: {
+      height: 8,
+      width: '100%',
+      backgroundColor: '#555',
+      borderRadius: 4,
+      overflow: 'hidden',
+      marginTop: 4,
+    },
+    progress: {
+      height: '100%',
+      borderRadius: 4,
+    },
     viewContainer: {
       flex: 1,
       backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',

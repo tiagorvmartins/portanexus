@@ -11,6 +11,8 @@ import GetContainerLogsPayload from "src/containers/application/types/GetLogsPay
 import GetContainerLogsResponse from "src/containers/application/types/GetContainerLogsResponse";
 import { Buffer } from 'buffer';
 import uuid from 'react-native-uuid'
+import GetContainerStatsPayload from "src/containers/application/types/GetStatsPayload";
+import GetContainerStatsResponse, { Stats } from "src/containers/application/types/GetContainerStatsResponse";
 
 @injectable()
 class ContainersRepository implements IContainersRepository {
@@ -53,6 +55,52 @@ class ContainersRepository implements IContainersRepository {
 
   public async stop(data: ControlContainerPayload): Promise<void> {
     return await this.httpClient.post(`${this.endpointsBaseUrl}/${data.endpointId}/docker/containers/${data.containerId}/stop`);
+  }
+
+  public async getContainerStats(data: GetContainerStatsPayload): Promise<GetContainerStatsResponse> {
+    try {
+      const stats = await this.httpClient.get<any>(`${this.endpointsBaseUrl}/${data.endpointId}/docker/containers/${data.containerId}/stats?stream=false&one-shot=false`);
+      const usedMemoryCgroup1 = stats.memory_stats.stats.total_inactive_file && stats.memory_stats.stats.total_inactive_file < stats.memory_stats.usage ? stats.memory_stats.usage - stats.memory_stats.stats.total_inactive_file : 0;
+      const usedMemoryCgroup2 = stats.memory_stats.stats.inactive_file && stats.memory_stats.stats.inactive_file < stats.memory_stats.usage ? stats.memory_stats.usage - stats.memory_stats.stats.inactive_file : 0;
+      let usedMemory = stats.memory_stats.usage;
+
+      if (stats.memory_stats.stats.total_inactive_file)
+        usedMemory = usedMemoryCgroup1;
+
+      if (stats.memory_stats.stats.inactive_file)
+        usedMemory = usedMemoryCgroup2;
+
+      const availableMemory = stats.memory_stats.limit;
+      const memoryUsagePercentage = (usedMemory/availableMemory) * 100.0;
+
+      const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+      const systemCpuDelta  = stats.cpu_stats.system_cpu_usage - (stats.precpu_stats.system_cpu_usage ?? 0);
+      const numberCpus  = stats.cpu_stats.online_cpus;
+      const cpuUsagePercentage = (cpuDelta / systemCpuDelta) * numberCpus * 100.0;
+
+      const memoryUsageStat: Stats = {
+        label: "MEM %",
+        value: memoryUsagePercentage.toFixed(2)
+      }
+      const cpuUsageStat: Stats = {
+        label: "CPU %",
+        value: cpuUsagePercentage.toFixed(2)
+      }
+
+      const containerStats: Stats[] = [memoryUsageStat, cpuUsageStat];
+
+      const response: GetContainerStatsResponse = {
+        results: containerStats,
+        count: containerStats.length,
+      };
+      return response;
+      
+    } catch {
+      return {
+        results: [],
+        count: 0
+      }
+    }
   }
 
   public async getContainerLogs(data: GetContainerLogsPayload): Promise<GetContainerLogsResponse> {

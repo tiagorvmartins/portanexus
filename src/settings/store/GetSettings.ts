@@ -7,6 +7,8 @@ export class GetSettings {
   logsSince: number = 60000;
   logsInterval: number = 1000;
   logsMaxLines: number = 50;
+  containerOrderBy: string = 'containerNameAsc';
+  stackOrderBy: string = 'stackNameAsc';
 
   constructor(
   ) {   
@@ -37,6 +39,14 @@ export class GetSettings {
     this.logsMaxLines = logsMaxLines
   }
 
+  setContainerOrderBy = (containerOrderBy: string) => {
+    this.containerOrderBy = containerOrderBy
+  }
+
+  setStackOrderBy = (stackOrderBy: string) => {
+    this.stackOrderBy = stackOrderBy
+  }
+
   get isDarkMode() {
     return this.theme === 'dark'
   }
@@ -59,5 +69,13 @@ export class GetSettings {
 
   get getLogsMaxLines() {
     return this.logsMaxLines
+  }
+
+  get getContainerOrderBy() {
+    return this.containerOrderBy
+  }
+
+  get getStackOrderBy() {
+    return this.stackOrderBy
   }
 }

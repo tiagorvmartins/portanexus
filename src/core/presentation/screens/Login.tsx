@@ -66,6 +66,12 @@ const LoginScreen = observer(({ navigation }: any) => {
 
             const logsMaxLines = await authContext.getLogsMaxLines();
             getSettingsContext.setLogsMaxLines(logsMaxLines);
+
+            const containerOrderBy = await authContext.getContainerOrderBy();
+            getSettingsContext.setContainerOrderBy(containerOrderBy);
+
+            const stackOrderBy = await authContext.getStackOrderBy();
+            getSettingsContext.setStackOrderBy(stackOrderBy);
             return true;
         }
 

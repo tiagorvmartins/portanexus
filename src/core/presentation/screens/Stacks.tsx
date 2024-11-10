@@ -121,7 +121,7 @@ const StacksScreen = observer(({navigation}: any) => {
 
   return (
     <View style={styles.container}>
-       <AppHeader navigation={navigation} />
+       <AppHeader navigation={navigation} screen="stacks" />
        <ContainerHeader />
        <Stacks navigation={navigation} refreshing={refreshing} onRefresh={onRefresh} />
       <Footer />

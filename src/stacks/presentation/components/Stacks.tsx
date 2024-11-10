@@ -4,20 +4,40 @@ import { useGetSettingsContext } from "src/settings/store/useSettingsContext";
 import { useGetStacksStore } from "../stores/GetStacksStore/useGetStacksStore";
 import { observer } from "mobx-react";
 import Stack from "./Stack";
+import StackEntity from "src/stacks/domain/entities/StackEntity";
 
 const Stacks = observer(({navigation, refreshing, onRefresh}: any) => {
 
   const getSettingsContext = useGetSettingsContext();
-  const { theme } = getSettingsContext;
+  const { theme, stackOrderBy } = getSettingsContext;
   const styles = createStyles(theme);
 
   const getStacksStore = useGetStacksStore();
   const { results } = getStacksStore;
   const [ updateStacks, setUpdateStacks ] = useState<boolean>(false);
+  const [stacks, setStacks] = useState<StackEntity[]>(results);
 
   useEffect(() => {
+    let sortedData = [...results];
+    switch (stackOrderBy) {
+      case "createdDateAsc":
+        sortedData.sort((a: StackEntity, b: StackEntity) => a.CreationDate - b.CreationDate);
+        break;
+      case "createdDateDesc":
+        sortedData.sort((a: StackEntity, b: StackEntity) => b.CreationDate - a.CreationDate);
+        break;
+      case "nameAsc":
+        sortedData.sort((a, b) => a.Name.localeCompare(b.Name));
+        break;
+      case "nameDesc":
+        sortedData.sort((a, b) => b.Name.localeCompare(a.Name));
+        break;
+      default:
+        break;
+    }
+    setStacks(sortedData);
     setUpdateStacks(!updateStacks)
-  }, [results]);
+  }, [stackOrderBy, results]);
 
   return (
       <FlatList
@@ -28,7 +48,7 @@ const Stacks = observer(({navigation, refreshing, onRefresh}: any) => {
             />
           }
           nestedScrollEnabled
-          data={results}
+          data={stacks}
           renderItem={({item}) => 
               <Stack navigation={navigation} key={item.Id} stackName={item.Name} status={item.Status} stackId={item.Id} creationDate={item.CreationDate} /> 
           }

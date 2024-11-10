@@ -69,6 +69,30 @@ export class Auth {
       return parseInt(logsMaxLines, 10)
     }
     return 100
+  }
+
+  setContainerOrderBy = async (containerOrderBy: SecureStoreEntry) => {
+    await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.CONTAINER_ORDER_BY, containerOrderBy);
+  }
+
+  getContainerOrderBy = async () => {
+    const containerOrderBy = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.CONTAINER_ORDER_BY);
+    if (containerOrderBy) {
+      return containerOrderBy
+    }
+    return 'containerNameAsc'
+  } 
+
+  setStackOrderBy = async (stackOrderBy: SecureStoreEntry) => {
+    await this.secureStoreWrapper.setItemAsync(SecureStoreEntry.STACK_ORDER_BY, stackOrderBy);
+  }
+
+  getStackOrderBy = async () => {
+    const stackOrderBy = await this.secureStoreWrapper.getItemAsync(SecureStoreEntry.STACK_ORDER_BY);
+    if (stackOrderBy) {
+      return stackOrderBy
+    }
+    return 'stackContainerName'
   } 
 
   setLoginApiKey = async (hostUrl: SecureStoreEntry, apiKey: SecureStoreEntry) => {
