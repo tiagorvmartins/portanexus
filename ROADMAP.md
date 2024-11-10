@@ -6,10 +6,10 @@ More details below.
 
 #### **Version 0.2.0**
 **Goals:** Enhance user experience and basic functionalities.
-- **User Feedback Mechanism:** Implement a simple feedback form for users to submit issues or feature requests.
+- **User Feedback Mechanism:** Implement a simple feedback form for users to submit issues or feature requests. (Canceled) :x:
 - **Container Management:** 
-  - Add the ability to view container logs.
-  - Provide a detailed view of container information (e.g., resource usage, restart policies).
+  - Add the ability to view container logs. :white_check_mark:
+  - Provide a detailed view of container information (e.g., resource usage, restart policies). :white_check_mark:
 
 #### **Version 0.3.0**
 **Goals:** Expand management capabilities.

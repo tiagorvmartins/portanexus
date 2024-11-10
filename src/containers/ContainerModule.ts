@@ -6,6 +6,7 @@ import GetContainersUseCase from "./application/useCases/GetContainersUseCase"
 import StartContainersUseCase from "./application/useCases/StartContainerUseCase";
 import StopContainersUseCase from "./application/useCases/StopContainerUseCase";
 import GetContainerLogsUseCase from "./application/useCases/GetContainerLogsUseCase";
+import GetContainerStatsUseCase from "./application/useCases/GetContainerStatsUseCase";
 @module({
   providers: [
     {
@@ -14,6 +15,7 @@ import GetContainerLogsUseCase from "./application/useCases/GetContainerLogsUseC
     },
     GetContainersUseCase,
     GetContainerLogsUseCase,
+    GetContainerStatsUseCase,
     StartContainersUseCase,
     StopContainersUseCase,
     {

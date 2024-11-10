@@ -124,7 +124,7 @@ const ContainersScreen = observer(({navigation}: any) => {
 
   return (
     <View style={styles.container} >
-       <AppHeader navigation={navigation} />
+       <AppHeader navigation={navigation} screen="containers" />
        <ContainerHeader />
        <Containers navigation={navigation} onRefresh={onRefresh} refreshing={refreshing} />
       <Footer />

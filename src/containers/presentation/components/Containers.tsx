@@ -9,7 +9,7 @@ import ContainerEntity from "src/containers/domain/entities/ContainerEntity";
 
 const Containers = observer(({navigation, refreshing, onRefresh}: any) => {  
   const getSettingsContext = useGetSettingsContext();
-  const { theme } = getSettingsContext;
+  const { theme, containerOrderBy } = getSettingsContext;
   const styles = createStyles(theme);
 
   const getAllContainersStore = useGetAllContainersStore();
@@ -20,9 +20,26 @@ const Containers = observer(({navigation, refreshing, onRefresh}: any) => {
   const [ updateContainers, setUpdateContainers ] = useState<boolean>(false);
 
   useEffect(() => {
-    setContainers(results)
+    let sortedData = [...results];
+    switch (containerOrderBy) {
+      case "createdDateAsc":
+        sortedData.sort((a: ContainerEntity, b: ContainerEntity) => parseInt(a.Created) - parseInt(b.Created));
+        break;
+      case "createdDateDesc":
+        sortedData.sort((a, b) => parseInt(b.Created) - parseInt(a.Created));
+        break;
+      case "nameAsc":
+        sortedData.sort((a, b) => a.Names[0].localeCompare(b.Names[0]));
+        break;
+      case "nameDesc":
+        sortedData.sort((a, b) => b.Names[0].localeCompare(a.Names[0]));
+        break;
+      default:
+        break;
+    }
+    setContainers(sortedData);
     setUpdateContainers(!updateContainers)
-  }, [results]);
+  }, [containerOrderBy, results]);
 
   const updateSpecificContainer = useCallback(async (containerId: number) => {
     const singleContainerPayload: Record<string, any> = { id: [containerId] };
@@ -83,11 +100,44 @@ const Containers = observer(({navigation, refreshing, onRefresh}: any) => {
           style={styles.scrollView}
           extraData={updateContainers}>
         </FlatList>
-      )
+    )
 });
 
 const createStyles = (theme: string) => {
   return StyleSheet.create({
+    modalContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0,0,0,0.5)",
+    },
+    modalContent: {
+      backgroundColor: "white",
+      padding: 20,
+      borderRadius: 5,
+      width: "80%",
+    },
+    optionButton: {
+      padding: 10,
+      borderBottomWidth: 1,
+      borderColor: "#ccc",
+    },
+    orderingView: {
+      height: 50,
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    sortButton: {
+      backgroundColor: '#d2d2d2',
+      padding: 10,
+      borderRadius: 5,
+      borderBottomColor: '#ddd',
+      borderBottomWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignContent: 'center',
+      marginHorizontal: 10,
+    },
     title: {
       fontSize: 32,
       fontWeight: 'bold',

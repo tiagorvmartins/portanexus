@@ -3,4 +3,4 @@ export default interface GetContainerLogsPayload {
     containerId: string,
     since: number
     until: number
-  }
+}
