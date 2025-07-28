@@ -1,7 +1,7 @@
 name: PortaNexus Android APK Build and Release
 on:
   push:
-    tags: [ 'v*.*.*' ]
+    tags: [ 'v*.*.*']
 jobs:
   build:
     runs-on: ubuntu-latest
