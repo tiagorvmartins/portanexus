@@ -1,13 +1,18 @@
 import './gesture-handler';
 import { registerRootComponent } from 'expo';
+import App from "./src/screens/App";
+import { Provider } from 'react-redux';
+import { store } from './src/store/store';
 
-import { InversifySugar } from "inversify-sugar";
-import AppModule from "./src/AppModule";
-import App from "./src/core/presentation/App";
 
-(() => {
-  InversifySugar.options.defaultScope = "Singleton";
-  InversifySugar.run(AppModule);
+const ReduxApp = () => (
+  <Provider store={store}>
+    <App />
+  </Provider>
+);
 
-  registerRootComponent(App);
+(async () => {
+  registerRootComponent(ReduxApp);
 })();
+
+

@@ -1,11 +1,12 @@
 {
   "expo": {
+    "newArchEnabled": true,
     "name": "portanexus",
     "slug": "portanexus",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon_adaptive.png",
-    "scheme": "myapp",
+    "scheme": "portanexus",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",
