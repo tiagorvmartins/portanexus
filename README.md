@@ -8,9 +8,12 @@ View, control and manage your portainer instance from your smartphone (Android s
 
 Login with your Portainer Instance URL and your API Key, [check Portainer documentation on how to generate an API Key for your instance](https://docs.portainer.io/api/access).
 
-For the Portainer Instance URL be sure to add the route /api
+Example of Portainer Instance URL when using reverse proxy:
 
-Example of Portainer Instance URL: https://example.tld/api
+https://example.tld
+
+Or using internal IP and port
+http://machine_ip:9000
 
 ## Android
 
@@ -127,3 +130,4 @@ Light Theme                |  Dark Theme
 <p align="center">
   <a href="https://www.buymeacoffee.com/tiagorvmartins" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
 </p>
+
