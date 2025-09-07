@@ -1,27 +1,30 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, RefreshControl, FlatList } from "react-native";
 import Stack from "./Stack";
 import StackEntity from "src/features/stacks/StackEntity";
 import { useStacks } from "src/store/useStacks";
 import { useAuth } from "src/store/useAuth";
 import { useEndpoints } from "src/store/useEndpoints";
+import ContainerEntity from "src/types/ContainerEntity";
+import { useContainer } from "src/store/useContainer";
+import Loading from "src/components/Loading";
 
 
-const Stacks = ({navigation, refreshing, onRefresh}: any) => {
+const Stacks = ({filterByStackName, navigation }: any) => {
 
   const { theme, stackOrderBy, getStackOrderBy } = useAuth()
   const styles = createStyles(theme);
 
-  const { stacks: fetchedStacks, fetchStacks } = useStacks()
-  const { selectedEndpointId } = useEndpoints()  
-  const [ stacks, setStacks ] = useState<StackEntity[]>(fetchedStacks);
+  const { stacks: fetchedStacks, fetchStacks, fetchStack } = useStacks()
+  const { selectedEndpointId } = useEndpoints() 
+  const { fetchContainers, containers } = useContainer();
+  const [ isLoading, setIsLoading ] = useState(false)
 
-  
   useEffect(() => {
       const loadPreferences = async () => {
         try {
           await Promise.all([
-            fetchStacks({ endpointId: selectedEndpointId, filters: {} } ),
+            fetchStacks({ endpointId: selectedEndpointId, filters: {}, stackId: 0 } ),
             getStackOrderBy()
           ]);
         } catch (err) {
@@ -31,6 +34,48 @@ const Stacks = ({navigation, refreshing, onRefresh}: any) => {
   
       loadPreferences();
   }, []);
+
+  const [fullStacks, setFullStacks] = useState<StackEntity[]>(fetchedStacks);
+
+  
+  const updateStack = async(stackId: number) => {
+    const stackFetched: any = await fetchStack({ endpointId: selectedEndpointId, filters: {}, stackId: stackId } )
+    
+    const stackFetchedResult: any = stackFetched.payload
+    await fetchContainers({ filters: { label: [`com.docker.compose.project=${stackFetchedResult.Name}`] }, endpointId: selectedEndpointId })
+
+    if (stackFetched) {
+      setFullStacks(prevStacks =>
+        prevStacks.map(s => (s.Id === stackFetchedResult.Id ? stackFetchedResult : s))
+      );
+    }
+
+  };
+
+  const fetchAll = async () => {
+      setIsLoading(true)
+      const promises = fetchedStacks.map(stack =>
+        fetchContainers({ filters: { label: [`com.docker.compose.project=${stack.Name}`] }, endpointId: selectedEndpointId })
+      );
+
+      const results = await Promise.all(promises);
+      setIsLoading(false)
+  };
+
+  useEffect(() => {
+    fetchAll();
+    setFullStacks(fetchedStacks)
+  }, [fetchedStacks.length, selectedEndpointId]);
+
+
+  useEffect(() => {
+    if (!filterByStackName) {
+      setFullStacks(fetchedStacks)
+    } else {
+      const filteredContainers = fetchedStacks.filter((p: StackEntity) => p.Name.toLowerCase().includes(filterByStackName.toLowerCase()))
+      setFullStacks(filteredContainers)
+    }
+  }, [filterByStackName]);
 
 
   useEffect(() => {
@@ -51,26 +96,49 @@ const Stacks = ({navigation, refreshing, onRefresh}: any) => {
         default:
           break;
       }
-      setStacks(sortedData);
-  }, [fetchedStacks, stackOrderBy]);
+      setFullStacks(sortedData);
+  }, [stackOrderBy]);
+
+  const containersByStack = useMemo(() => {
+    const map: Record<string, ContainerEntity[]> = {};
+    if (!containers || containers.length === 0 || !fetchedStacks) return map;
+    fetchedStacks.forEach((stack) => {
+      const key = stack.Name;
+      // Some backends embed compose project name in Names[0] or in Labels; we match by name fragment
+      const list = containers.filter((c: any) => {
+        const names = (c?.Names || []) as string[];
+        const labels = (c?.Labels || {}) as Record<string, string>;
+        const byLabel = labels && labels["com.docker.compose.project"] === key;
+        const byName = names.some(n => (n || "").includes(key));
+        return byLabel || byName;
+      });
+      map[key] = list as ContainerEntity[];
+    });
+    return map;
+  }, [containers, fetchedStacks]);
 
   return (
+      <>
       <FlatList
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
+              refreshing={isLoading}
+              onRefresh={() => {
+                fetchAll()
+              }}
             />
           }
           nestedScrollEnabled
-          data={stacks}
+          extraData={containers}
+          data={fullStacks}
           renderItem={({item}) => 
-              <Stack navigation={navigation} key={item.Id} stackName={item.Name} status={item.Status} stackId={item.Id} creationDate={item.CreationDate} /> 
+              <Stack navigation={navigation} key={item.Id} stackName={item.Name} status={item.Status} stackId={item.Id} creationDate={item.CreationDate} update={updateStack} isLoading={isLoading} containers={containersByStack[item.Name] || []}  /> 
           }
           keyExtractor={item => item.Id.toString()}
           style={styles.scrollView}
           >
       </FlatList>
+    </>
   );
 };
 

@@ -11,11 +11,13 @@ import { useEndpoints } from 'src/store/useEndpoints';
 import { useContainer } from 'src/store/useContainer';
 import GetContainerLogsResponse, { Log } from 'src/types/GetContainerLogsResponse';
 import GetContainerStatsResponse, { Stats } from 'src/types/GetContainerStatsResponse';
+import { getContainerLogsApi } from './containerAPI';
 
 const ContainerLogs = ({ route, navigation }: any) => {
-  let intervalId: NodeJS.Timeout;
+  
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { theme, logsSince, logsRefreshInterval, logsMaxLines } = useAuth();
+  const { theme, logsSince, logsRefreshInterval, logsMaxLines, getLogsMaxLines, getRefreshInterval, getLogsSince } = useAuth();
   
   const styles = createStyles(theme);
   
@@ -28,10 +30,8 @@ const ContainerLogs = ({ route, navigation }: any) => {
   const [ localLoading, setLocalLoading ] = useState(false);
   const { selectedEndpointId } = useEndpoints()
   const scrollViewRef = useRef<RNScrollView | null>(null);
-
-  let since = logsSince === 0 ? 0 : Math.floor(Date.now() / 1000) - (logsSince/1000);
-  let until = Math.floor(Date.now() / 1000);
-
+  
+  const sinceRef = useRef(logsSince === 0 ? 0 : Math.floor(Date.now() / 1000) - (logsSince / 1000));
 
   const [fireLogsChange, setFireLogsChange] = useState(false);
 
@@ -48,11 +48,12 @@ const ContainerLogs = ({ route, navigation }: any) => {
     try {
         if (initialLoading)
           setLocalLoading(true)
+        let until = Math.floor(Date.now() / 1000);
 
-        const logsResponse = await fetchContainerLogs({ endpointId: selectedEndpointId, containerId: route.params.containerId, since, until });
-        if (logsResponse.payload) {
-          const { results, containerId, count } = logsResponse.payload as GetContainerLogsResponse
-          if (results.length && count) {
+        const logsResponse = await getContainerLogsApi({ endpointId: selectedEndpointId, containerId: route.params.containerId, since: sinceRef.current, until });
+
+        if (logsResponse.results.length && logsResponse.count) {
+            const results = logsResponse.results
             setLogs(prevLogs => {
               if (logsMaxLines !== 0) {
                 const combinedLogs = [...prevLogs, ...results];
@@ -70,9 +71,9 @@ const ContainerLogs = ({ route, navigation }: any) => {
             });
 
             setFireLogsChange(!fireLogsChange)
-          }
+          
         }
-        since = until
+        sinceRef.current = until;
         until = Math.floor(Date.now() / 1000)
     } catch {
       showErrorToast("There was an error fetching container logs", theme)
@@ -86,24 +87,28 @@ const ContainerLogs = ({ route, navigation }: any) => {
     useCallback(() => {
       
       if (route.params.containerId) {
+        sinceRef.current = logsSince === 0 
+        ? 0 
+        : Math.floor(Date.now() / 1000) - (logsSince / 1000);
+
         getContainerLogs(true);
         getContainerStats()
       }
 
-      intervalId = setInterval(() => {
-        getContainerLogs(false)
-        getContainerStats()
-      }, logsRefreshInterval)
+      intervalRef.current = setInterval(() => {
+        getContainerLogs(false);
+        getContainerStats();
+      }, logsRefreshInterval);
 
       return () => {
         setLogs([])
-        clearInterval(intervalId);
+        if (intervalRef.current) clearInterval(intervalRef.current);
       };
-    }, [route.params.containerId, logsRefreshInterval])
+    }, [route.params.containerId, logsRefreshInterval, logsMaxLines, logsSince])
   );
 
   useEffect(() => {
-    since = logsSince === 0 ? 0 : Math.floor(Date.now() / 1000) - (logsSince / 1000)
+    sinceRef.current = logsSince === 0 ? 0 : Math.floor(Date.now() / 1000) - (logsSince / 1000);
   }, [logsSince]);
 
   const LogItem = ({text}: any) => (

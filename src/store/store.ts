@@ -13,6 +13,11 @@ export const store = configureStore({
     loading: loadingSlice,
     stacks: stackSlice
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+      immutableCheck: false,
+    }),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

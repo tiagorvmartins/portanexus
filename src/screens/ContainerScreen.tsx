@@ -1,5 +1,5 @@
 
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, TextInput, TouchableOpacity, View, Text, Pressable, ViewStyle } from "react-native";
 
 import { useCallback, useEffect, useState } from "react";
 import { showErrorToast } from "src/utils/toast";
@@ -25,6 +25,7 @@ const ContainersScreen = ({navigation}: any) => {
   const { selectedEndpointId, fetchEndpoints } = useEndpoints();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [filterByContainerName, setFilterByContainerName] = useState<string>("");
 
   const fetchRunningContainers = async () => {
     try {
@@ -89,7 +90,34 @@ const ContainersScreen = ({navigation}: any) => {
     <View style={styles.container} >
        <AppHeader navigation={navigation} screen="containers" />
        <ContainerHeader running={countRunning} exited={count-countRunning} activeLabel="Containers Running" inactiveLabel="Containers Inactive" />
-       <Containers navigation={navigation} onRefresh={onRefresh} refreshing={refreshing} containers={containers} />
+       <View style={styles.inputContainer}>
+          <TextInput
+            multiline={Platform.OS === "web" ? false : true}
+            placeholder="Filter by container name..."
+            onChangeText={(text: string) => {
+              setFilterByContainerName(text.replace(/\s/g, ""));
+            }}
+            placeholderTextColor={
+              theme === "light"
+                ? "rgba(51, 51, 51, 0.5)"
+                : "rgba(224, 224, 224, 0.5)"
+            }
+            value={filterByContainerName}
+            style={styles.input}
+          />
+
+          <Pressable
+            onPress={() => setFilterByContainerName("")}
+            style={({ pressed }): ViewStyle[] => [
+              styles.clearButton,
+              pressed ? styles.clearButtonPressed : styles.clearButton,
+            ]}
+          >
+            <Text style={styles.clearText}>✕</Text>
+          </Pressable>
+          
+       </View>
+       <Containers navigation={navigation} onRefresh={onRefresh} filterByContainerName={filterByContainerName} refreshing={refreshing} containers={containers} />
       <Footer />
     </View>
   );
@@ -105,6 +133,53 @@ const createStyles = (theme: string) => {
       fontSize: 24,
       fontWeight: 'bold',
       color: theme === 'light' ? '#333333' : '#e0e0e0',
+    },
+    inputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    input: {
+      borderWidth: 1,
+      borderRadius: 5,
+      padding: 24,
+      marginLeft: 16,
+      marginRight: 16,
+      marginBottom: 8,
+      borderColor: theme === 'light' ? '#000000' : '#444444',
+      shadowColor: theme === 'light' ? '#000000' : '#444444',
+      color: theme === 'light' ? '#000000' : '#FFFFFF',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      textAlign: 'center',
+      flex: 1,
+      paddingVertical: 8,
+      fontSize: 16,
+    },
+    clearButtonPressed: {
+      backgroundColor: "#aaa",
+      transform: [{ scale: 0.9 }],
+    },
+    clearButton: {
+      marginRight: 16,
+      marginBottom: 8,
+      backgroundColor: "#e0e0e0",
+      borderRadius: 12,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      justifyContent: "center",
+      alignItems: "center",
+
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 2,
+    },
+    clearText: {
+      fontSize: 14,
+      fontWeight: "bold",
+      color: "#333",
     },
   });
 };

@@ -36,6 +36,7 @@ export const setRefreshInterval = createAsyncThunk(
   "auth/setRefreshInterval",
   async (refreshInterval: SecureStoreEntry) => {
     await setItemAsync(SecureStoreEntry.LOGS_REFRESH_INTERVAL, refreshInterval)
+    return refreshInterval;
   }
 );
 
@@ -43,6 +44,7 @@ export const setLogsSince = createAsyncThunk(
   "auth/setLogsSince",
   async (logsSince: SecureStoreEntry) => {
     await setItemAsync(SecureStoreEntry.LOGS_SINCE, logsSince)
+    return logsSince;
   }
 );
 
@@ -50,6 +52,7 @@ export const setLogsMaxLines = createAsyncThunk(
   "auth/setLogsMaxLines",
   async (logsMaxLines: SecureStoreEntry) => {
     await setItemAsync(SecureStoreEntry.LOGS_MAX_LINES, logsMaxLines)
+    return logsMaxLines;
   }
 );
 
@@ -76,6 +79,29 @@ export const setLoginApiKey = createAsyncThunk(
       await setItemAsync(SecureStoreEntry.BASE_API_URL, hostUrl),
       await setItemAsync(SecureStoreEntry.API_KEY, apiKey)
     ]);
+  }
+);
+
+export const setLogDefaults = createAsyncThunk(
+  "auth/setLogDefaults",
+  async (_, { dispatch, getState }) => {
+    const state = getState() as RootState;
+
+    
+    const refreshInterval = await getItemAsync(SecureStoreEntry.LOGS_REFRESH_INTERVAL);
+    if (refreshInterval === null || refreshInterval === undefined) {
+      await setItemAsync(SecureStoreEntry.LOGS_REFRESH_INTERVAL, state.auth.logsRefreshInterval.toString());
+    }
+
+    const logsMaxLines = await getItemAsync(SecureStoreEntry.LOGS_MAX_LINES);
+    if (logsMaxLines === null || logsMaxLines === undefined) {
+      await setItemAsync(SecureStoreEntry.LOGS_MAX_LINES, state.auth.logsMaxLines.toString());
+    }
+
+    const logsSince = await getItemAsync(SecureStoreEntry.LOGS_SINCE);
+    if (logsSince === null || logsSince === undefined) {
+      await setItemAsync(SecureStoreEntry.LOGS_SINCE, state.auth.logsSince.toString());
+    }
   }
 );
 
@@ -110,7 +136,7 @@ export const getRefreshInterval = createAsyncThunk(
     "auth/getRefreshInterval", 
     async() => {
         const refreshInterval = await getItemAsync(SecureStoreEntry.LOGS_REFRESH_INTERVAL);
-        if (refreshInterval) {
+        if (refreshInterval !== null && refreshInterval !== undefined) {
             return parseInt(refreshInterval, 10)
         }
         return 1000
@@ -121,7 +147,8 @@ export const getLogsSince = createAsyncThunk(
     "auth/getLogsSince", 
     async() => {
         const logsSince = await getItemAsync(SecureStoreEntry.LOGS_SINCE);
-        if (logsSince) {
+        
+        if (logsSince !== null && logsSince !== undefined) {
             return parseInt(logsSince, 10)
         }
         return 60000
@@ -132,7 +159,7 @@ export const getLogsMaxLines = createAsyncThunk(
     "auth/getLogsMaxLines", 
     async() => {
         const logsMaxLines = await getItemAsync(SecureStoreEntry.LOGS_MAX_LINES);
-        if (logsMaxLines) {
+        if (logsMaxLines !== null && logsMaxLines !== undefined) {
             return parseInt(logsMaxLines, 10)
         }
         return 100
@@ -227,6 +254,15 @@ export const authSlice = createSlice({
       })
       .addCase(setStackOrderBy.fulfilled, (state, action) => {
         state.stackOrderBy = action.payload;
+      })
+      .addCase(setLogsSince.fulfilled, (state, action) => {
+        state.logsSince = parseInt(action.payload, 10);
+      })
+      .addCase(setLogsMaxLines.fulfilled, (state, action) => {
+        state.logsMaxLines = parseInt(action.payload, 10);
+      })
+      .addCase(setRefreshInterval.fulfilled, (state, action) => {
+        state.logsRefreshInterval = parseInt(action.payload, 10);
       });
     
   },
