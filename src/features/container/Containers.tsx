@@ -6,7 +6,7 @@ import { useContainer } from "src/store/useContainer";
 import { useAuth } from "src/store/useAuth";
 import Container from "./Container";
 
-const Containers = ({refreshing, onRefresh, navigation, containers: containersArg }: any) => {
+const Containers = ({filterByContainerName, refreshing, onRefresh, navigation, containers: containersArg }: any) => {
   const { theme, containerOrderBy, getContainerOrderBy } = useAuth()
   const styles = createStyles(theme);
 
@@ -32,6 +32,14 @@ const Containers = ({refreshing, onRefresh, navigation, containers: containersAr
 
   const { fetchSingleContainer } = useContainer();
 
+  useEffect(() => {
+    if (!filterByContainerName) {
+      setContainers(containersArg)
+    } else {
+      const filteredContainers = containersArg.filter((p: ContainerEntity) => p.Names[0].toLowerCase().includes(filterByContainerName.toLowerCase()))
+      setContainers(filteredContainers)
+    }
+  }, [filterByContainerName]);
   
   useEffect(() => {
     let sortedData = [...containersArg];

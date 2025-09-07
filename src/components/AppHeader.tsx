@@ -4,6 +4,7 @@ import Icon from '@expo/vector-icons/FontAwesome';
 import { useAuth } from 'src/store/useAuth';
 import SecureStoreEntry from 'src/enums/SecureStoreEntry';
 
+
 const Header = ({navigation, screen}: any) => {
 
     const { theme, toggleThemeAndPersist, setStackOrderBy, setContainerOrderBy, setProfileTheme } = useAuth()
@@ -38,7 +39,14 @@ const Header = ({navigation, screen}: any) => {
     return (
         <View style={styles.topHeaderContainer}>
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Icon 
+                    name="bars" 
+                    size={24} 
+                    color={theme === 'light' ? '#333' : '#fff'} 
+                />
                 <Image style={styles.logo} source={theme === 'light' ? require('src/images/porta-nexus-light.png') : require('src/images/porta-nexus-dark.png')} />
+                </View>
             </TouchableOpacity>
             <View style={styles.headerContainer}>
                 <Icon
@@ -140,13 +148,12 @@ const createStyles = (theme: string) => {
             justifyContent: 'space-between',
             alignItems: 'center',
             marginLeft: 16,
-            marginRight: 16,
         },
         headerContainer: {
             backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',
             flexDirection: 'row',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
         },
         button: {
             alignItems: 'center',
@@ -154,8 +161,10 @@ const createStyles = (theme: string) => {
             padding: 10,
         },
         logo: {
-            width: 150,
+            width: 120,
             height: 60,
+            marginLeft: 10,
+            
         },
         container: {
             flex: 1,

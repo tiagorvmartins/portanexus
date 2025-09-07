@@ -1,7 +1,6 @@
 import { plainToInstance } from "class-transformer";
 import HttpClient from '../../services/HttpClient';
 import uuid from 'react-native-uuid'
-import ContainerDto from "./ContainerDto";
 import GetContainersPayload from "src/types/GetContainersPayload";
 import GetContainersResponse from "src/types/GetContainersResponse";
 import ControlContainerPayload from "src/types/ControlContainerPayload";
@@ -9,17 +8,19 @@ import GetContainerStatsPayload from "src/types/GetStatsPayload";
 import GetContainerStatsResponse, { Stats } from "src/types/GetContainerStatsResponse";
 import GetContainerLogsPayload from "src/types/GetContainerLogsPayload";
 import GetContainerLogsResponse from "src/types/GetContainerLogsResponse";
+import { showErrorToast } from "src/utils/toast";
 
 export async function get(payload: GetContainersPayload): Promise<GetContainersResponse> {
     try {
         const filters = encodeURIComponent(JSON.stringify(payload.filters))
         const containers = (await HttpClient.Instance.get<unknown[]>(`/api/endpoints/${payload.endpointId}/docker/containers/json?all=true&filters=${filters}`));
         const response: GetContainersResponse = {
-            results: containers.map((container: any) => plainToInstance(ContainerDto, container).toDomain()),
+            results: containers.map((container: any) => ({...container})),
             count: containers.length,
         };
         return response;
-    } catch {
+    } catch (error: any){
+        showErrorToast("Unknown error: ", error);
         return {
             results: [],
             count: 0
@@ -81,13 +82,12 @@ export async function getContainerStats(data: GetContainerStatsPayload): Promise
     }
 }
 
-export async function getContainerLogs(data: GetContainerLogsPayload): Promise<GetContainerLogsResponse> {
+export async function getContainerLogsApi(data: GetContainerLogsPayload): Promise<GetContainerLogsResponse> {
     try {
         const arrayBuffer = await HttpClient.Instance.get(`/api/endpoints/${data.endpointId}/docker/containers/${data.containerId}/logs?stdout=true&stderr=true&since=${data.since}&until=${data.until}`,
             {
                 responseType: "arraybuffer"
             }) as ArrayBuffer;
-        
         let buffer = new Uint8Array(arrayBuffer);
         let cleanedLogs = processLogsBuffer(buffer);
         return {

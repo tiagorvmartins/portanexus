@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { get, start, stop, getContainerStats, getContainerLogs } from './containerAPI';
+import { get, start, stop, getContainerStats, getContainerLogsApi } from './containerAPI';
 import GetContainersPayload from 'src/types/GetContainersPayload';
 import ControlContainerPayload from 'src/types/ControlContainerPayload';
 import GetContainerStatsResponse from 'src/types/GetContainerStatsResponse';
@@ -91,7 +91,7 @@ export const fetchContainerLogs = createAsyncThunk<
 >(
   "container/getLogs",
   async (payload: GetContainerLogsPayload) => {
-    return await getContainerLogs(payload);
+    return await getContainerLogsApi(payload);
   }
 );
 
@@ -109,12 +109,29 @@ export const containerSlice = createSlice({
         state.countRunning = action.payload.length;
       })
       .addCase(fetchContainers.fulfilled, (state, action) => {
-        state.containers = action.payload;
+        // Merge containers by Id to keep a single source of truth across views
+        const mergedById: Record<number, ContainerEntity> = {} as any;
+
+        // Seed with existing containers
+        state.containers.forEach((existing) => {
+          if (existing && typeof existing.Id !== 'undefined') {
+            mergedById[existing.Id] = existing;
+          }
+        });
+
+        // Upsert fetched containers
+        action.payload.forEach((incoming) => {
+          if (incoming && typeof incoming.Id !== 'undefined') {
+            mergedById[incoming.Id] = incoming;
+          }
+        });
+
+        state.containers = Object.values(mergedById);
         state.count = state.containers.length;
 
-        action.payload.forEach((container: ContainerEntity) => {
-          if (container && container.Id && !state.containerLogsMap[container.Id]) {
-            state.containerLogsMap[container.Id] = [];
+        state.containers.forEach((container: ContainerEntity) => {
+          if (container && (container as any).Id && !state.containerLogsMap[(container as any).Id]) {
+            state.containerLogsMap[(container as any).Id] = [];
           }
         });
       })
@@ -132,20 +149,22 @@ export const containerSlice = createSlice({
         state.containerLogsMap[containerId] = results;
       })
       .addCase(startContainer.fulfilled, (state, action) => {
-        const container = state.containers.find(
-          (c) => c.Id && c.Id === action.meta.arg.containerId
-        );
-        if (container) {
-          container.Status = "running";
-        }
+        const targetId = action.meta.arg.containerId;
+        state.containers = state.containers.map((c) => {
+          if (c && c.Id === targetId) {
+            return { ...c, Status: "running", State: "running" } as any;
+          }
+          return c;
+        });
       })
       .addCase(stopContainer.fulfilled, (state, action) => {
-        const container = state.containers.find(
-          (c) => c.Id && c.Id === action.meta.arg.containerId
-        );
-        if (container) {
-          container.Status = "stopped";
-        }
+        const targetId = action.meta.arg.containerId;
+        state.containers = state.containers.map((c) => {
+          if (c && c.Id === targetId) {
+            return { ...c, Status: "stopped", State: "stopped" } as any;
+          }
+          return c;
+        });
       });
   },
 });

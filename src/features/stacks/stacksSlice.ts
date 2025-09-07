@@ -35,6 +35,17 @@ export const fetchStacks = createAsyncThunk<
   }
 );
 
+export const fetchStack = createAsyncThunk<
+  StackEntity, 
+  GetStacksPayload
+>(
+  "stack/find",
+  async (payload: GetStacksPayload) => {
+    const stackResponse = await find(payload.stackId ?? 0);
+    return stackResponse;
+  }
+);
+
 export const startStack = createAsyncThunk<
   void,
   GetStacksPayload
@@ -47,6 +58,14 @@ export const stopStack = createAsyncThunk<
   GetStacksPayload
 >("stacks/stop", async (data: GetStacksPayload) => {
   await stop(data);
+});
+
+export const restartStack = createAsyncThunk<
+  void,
+  GetStacksPayload
+>("stacks/restart", async (data: GetStacksPayload) => {
+  await stop(data);
+  await start(data);  
 });
 
 export const stackSlice = createSlice({

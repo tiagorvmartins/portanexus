@@ -16,12 +16,11 @@ import StacksScreen from './StacksScreen';
 import ContainersScreen from './ContainerScreen';
 import EndpointLists from './EndpointsList';
 import SettingsScreen from './SettingsScreen';
-import ContainerLogs from '../features/container/ContainerLogs';
 import { navigationRef } from './NavigationRef';
 import { showErrorToast, showSuccessToast } from 'src/utils/toast';
 import { haveLoginDetail as haveLoginDetailThunk } from '../features/auth/authSlice'
-import { fetchEndpoints as fetchEndpointsThunk } from '../features/endpoints/endpointsSlice'
 import { useEndpoints } from 'src/store/useEndpoints';
+import ContainerLogs from 'src/features/container/ContainerLogs';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
@@ -147,6 +146,7 @@ const App = () => {
     haveLoginDetail,
     setLoginApiKey,
     setLoggedIn,
+    setLogDefaults,
   } = useAuth();
   const { endpoints, fetchEndpoints } = useEndpoints()
 
@@ -163,6 +163,7 @@ const App = () => {
 
         setLoggedIn(true)
         setAuthChecked(true);
+        
       } catch (err) {
         console.error("Error loading preferences:", err);
       }
@@ -186,9 +187,9 @@ const App = () => {
 
       const endpoints = endpointsResult.payload ?? [];
 
-      if (isLoginValid && endpoints.length > 0) {
+      if (isLoginValid && Array.isArray(endpoints) && endpoints.length > 0) {
         setLoggedIn(true);
-
+        setLogDefaults()
         if (navigationRef.isReady()) {
           navigationRef.reset({
             index: 0,

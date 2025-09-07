@@ -18,6 +18,7 @@ import {
     haveLoginDetail,
     setLoggedIn,
     toggleThemeAndPersist,
+    setLogDefaults,
 } from '../features/auth/authSlice';
 import { SetLoginArgs } from 'src/types/LoginArgs';
 import SecureStoreEntry from 'src/enums/SecureStoreEntry';
@@ -37,6 +38,7 @@ export const useAuth = () => {
     logsRefreshInterval,
     toggleThemeAndPersist: () => { dispatch(toggleThemeAndPersist()) },
     setLoggedIn: (arg: boolean) => dispatch(setLoggedIn(arg)),
+    setLogDefaults: () => { dispatch(setLogDefaults()) },
     setProfileTheme: (theme: SecureStoreEntry) => { dispatch(setProfileTheme(theme)) },
     setRefreshInterval: (refreshInterval: SecureStoreEntry) => { dispatch(setRefreshInterval(refreshInterval)) },
     setLogsSince: (logsSince: SecureStoreEntry) => { dispatch(setLogsSince(logsSince)) },

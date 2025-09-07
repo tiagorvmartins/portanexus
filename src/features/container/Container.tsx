@@ -15,7 +15,7 @@ const statusDot = (status: number | string, styles: any) => {
   return styles.dotInactive
 }
 
-const Container = ({ navigation, containerName, status, containerId, state, onUpdate }: any) => {
+const Container = ({ navigation, containerName, status, containerId, state, onUpdate, updateParentStack, stackId  }: any) => {
 
   const { theme } = useAuth()
   const styles = createStyles(theme);
@@ -32,6 +32,8 @@ const Container = ({ navigation, containerName, status, containerId, state, onUp
         containerId: containerId
       });
       onUpdate(containerId);
+      if(stackId)
+        updateParentStack(stackId);
       showSuccessToast("Started container successfully!", theme)
     } catch {
       showErrorToast("There was an error starting the container", theme)
@@ -47,6 +49,8 @@ const Container = ({ navigation, containerName, status, containerId, state, onUp
         containerId: containerId
       });
       onUpdate(containerId);
+      if(stackId)
+        updateParentStack(stackId);
       showSuccessToast("Stopped container successfully!", theme)
     } catch {
       showErrorToast("There was an error stopping the container", theme)
@@ -66,6 +70,8 @@ const Container = ({ navigation, containerName, status, containerId, state, onUp
         containerId: containerId
       });
       onUpdate(containerId);
+      if(stackId)
+        updateParentStack(containerId);
       showSuccessToast("Restarted container successfully!", theme)
     } catch {
       showErrorToast("There was an error restarting the container", theme)
@@ -90,10 +96,11 @@ const Container = ({ navigation, containerName, status, containerId, state, onUp
           <View style={styles.cardHeaderOperations}>
             <TouchableOpacity 
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              onPress={(e) => { e.stopPropagation(); restart(containerId) } }>
+              onPress={(e) => { e.stopPropagation(); restart(containerId) } }  disabled={status !== "running"}>
               <Icon
                 name="rotate-right"
                 size={16}
+                style={state !== "running" ? styles.disabled : styles.enabled}
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>

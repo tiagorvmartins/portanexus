@@ -12,31 +12,30 @@ import { useContainer } from "src/store/useContainer";
 import { fetchSingleContainer as fetchSingleContainerThunk } from "src/features/container/containerSlice";
 import ContainerEntity from "src/types/ContainerEntity";
 
-const StatusDot = ({ fetching, stackContainers, status, styles, stackName }: any) => {
-  useEffect(() => {
-  }, [fetching, stackContainers, status]);
-
-  let dotStyle = styles.dotInactive;
-
-  if (fetching)
-    dotStyle = styles.dotLoading;
-  else if (stackContainers.length > 0 && stackContainers.every(p => p.State === "running"))
-    dotStyle = styles.dotActive;
-  else if (stackContainers.length > 0 && stackContainers.find(p => p.State !== "running"))
+const StatusDot = ({ stackContainers, styles, status, isLoading}: any) => {
+  
+  let dotStyle;
+  if (isLoading)
+    dotStyle = styles.dotLoading
+  else if (status === 2)
+    dotStyle = styles.dotInactive
+  else if (status === 1 && stackContainers.length > 0 && stackContainers.every((p: any) => p.State === "running")) 
+    dotStyle = styles.dotActive
+  else if (status === 1) 
     dotStyle = styles.dotPartialActive;
 
   return <View style={dotStyle} />;
 };
 
-const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) => {
+const Stack = ({ navigation, stackName, status, stackId, creationDate, containers, update, isLoading }: any) => {
 
   const { theme } = useAuth();
   const styles = createStyles(theme);
 
   const { selectedEndpointId } = useEndpoints();
-  const { fetchContainers, fetchSingleContainer } = useContainer();
+  const { fetchSingleContainer } = useContainer();
 
-  const { startStack, stopStack, fetchStacks } = useStacks()
+  const { startStack, stopStack, restartStack, fetchStacks } = useStacks()
   
   const [expanded, setExpanded] = useState(false);
   const stackContainersFilter: Record<string, any> = {
@@ -47,9 +46,7 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) =>
       fetchStacks({filters: stackContainersFilter, endpointId: selectedEndpointId});
   }, [selectedEndpointId]);
 
-  const [ localLoading, setLocalLoading ] = useState(false)
-  const [ fetching, setFetching ] = useState(true)
-
+  const [ localLoading, setLocalLoading ] = useState(false)  
   
   function ageInDaysAndHours(dateUnix: number): string {
     const momentDate = moment.unix(dateUnix)
@@ -58,14 +55,16 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) =>
 
     return `${days}d`;
   }
+  
+  // Use containers from props as the single source of truth
+  const stackContainers: ContainerEntity[] = containers || [];
 
   const start = async (stackId: number) => {
     setLocalLoading(true)
     try {
       await startStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
-      await fetchStacks({filters: {}, endpointId: selectedEndpointId});
+      await update(stackId)
       setExpanded(false);
-      await fetch()
       showSuccessToast("Started stack successfully!", theme)
     } catch (e) {
       showErrorToast("There was an error starting the stack", theme)
@@ -77,8 +76,7 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) =>
     setLocalLoading(true)
     try {
       await stopStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
-      await fetchStacks({filters: {}, endpointId: selectedEndpointId});
-      await fetch()
+      await update(stackId)
       setExpanded(false);
       showSuccessToast("Stopped stack successfully!", theme)
     } catch (e){
@@ -90,69 +88,27 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) =>
   const restart = async (stackId: number) => {
     setLocalLoading(true)
     try {
-      await stopStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
-      await startStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
-      await fetchStacks({filters: {}, endpointId: selectedEndpointId});
+      await restartStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
+      await update(stackId)
       setExpanded(false);
       showSuccessToast("Restarted stack successfully!", theme)
-      await fetch()
     } catch {
       showErrorToast("There was an error restarting the stack", theme)
     }
     setLocalLoading(false)
   };
 
-  const fetch = async() => {
-    try {
-      const stackContainersFilter: Record<string, any> = {
-        label: [`com.docker.compose.project=${stackName}`]
-      }
-      const fetchResult = await fetchContainers({filters: stackContainersFilter, endpointId: selectedEndpointId});
-      const results = fetchResult.payload as ContainerEntity[]
-      setStackContainers(results.map((container: any) => ({
-        ...container, 
-        collapsed: true,
-      })))
-    } catch (e){
-      showErrorToast("There was an error fetching the stack containers", theme)
-    } finally {
-      setFetching(false)
-    }
-  }
-
-  useEffect(() => {
-      fetch()
-  }, []);
-
-  
-  const [stackContainers, setStackContainers] = useState<ContainerEntity[]>([]);
+  // containers are derived in parent; no local syncing needed
 
   const updateSpecificContainer = useCallback(async (containerId: number) => {
     const filters : Record<string, any> = { id: [containerId] };
-    const singleContainer = await fetchSingleContainer({filters, endpointId: selectedEndpointId});
-    if(fetchSingleContainerThunk.fulfilled.match(singleContainer)){
-      const container = singleContainer.payload;
-      setStackContainers((prevValue) => {
-      const containerIndex = prevValue.findIndex(c => c.Id === containerId);
-      if (containerIndex !== -1) {
-        const updatedContainers = [...prevValue];
-        updatedContainers[containerIndex] = container;
-        return updatedContainers;
-      } else {
-        return [...prevValue, container];
-      }
-    });
-    }
+    await fetchSingleContainer({filters, endpointId: selectedEndpointId});
+    // Parent derives containers from global slice; no local state updates here
   }, []);
 
   const closeAllExceptSpecificContainer = useCallback(async (containerId: number) => {
-    setStackContainers((prevValue) => {
-      return prevValue.map(container => ({
-        ...container,
-        collapsed: container.Id === containerId ? !((container as any).collapsed) : true
-      }));
-    });
-  }, [stackContainers]);
+    // Local collapse state per container can be handled via global slice or avoided; no-op for now
+  }, [containers]);
 
   return (
     <View style={styles.card}>
@@ -165,15 +121,15 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) =>
       >
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderTitle}>
-            <StatusDot fetching={fetching} stackContainers={stackContainers} status={status} styles={styles} stackName={stackName}></StatusDot>
-            {/* <View style={statusDot(fetching, stackContainers, status, styles, stackName)} /> */}
+            <StatusDot stackContainers={stackContainers} isLoading={isLoading} status={status} name={stackName} styles={styles} stackName={stackName}></StatusDot>
             <Text style={styles.cardTitle}>{stackName}</Text>
           </View>
           <View style={styles.cardHeaderOperations}>
-            <TouchableOpacity onPress={(e) => { e.stopPropagation(); restart(stackId) }}>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); restart(stackId) }} disabled={status !== 1}>
               <Icon
                 name="rotate-right"
                 size={16}
+                style={status !== 1 ? styles.disabled : styles.enabled}
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
@@ -205,7 +161,19 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) =>
               <>
                 {
                   stackContainersFilter && stackContainers.map((section: any) => (
-                    <Container navigation={navigation} key={section.Id} containerName={section.Names[0].substring(1)} collapsed={section.collapsed} state={section.State} status={section.Status} containerId={section.Id} creationDate={section.Created} onUpdate={updateSpecificContainer} onClick={closeAllExceptSpecificContainer} /> 
+                    <Container 
+                      navigation={navigation} 
+                      key={section.Id} 
+                      containerName={section.Names[0].substring(1)} 
+                      collapsed={section.collapsed} 
+                      state={section.State} 
+                      status={section.Status} 
+                      containerId={section.Id} 
+                      creationDate={section.Created} 
+                      onUpdate={updateSpecificContainer} 
+                      onClick={closeAllExceptSpecificContainer}
+                      updateParentStack={update}
+                      stackId={stackId} /> 
                   ))
                 }
               </>
@@ -217,7 +185,6 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate }: any) =>
       </TouchableOpacity>
     </View>
   );
-
 };
 
 const createStyles = (theme: string) => {
