@@ -16,7 +16,7 @@ const Stacks = ({filterByStackName, navigation }: any) => {
   const styles = createStyles(theme);
 
   const { stacks: fetchedStacks, fetchStacks, fetchStack } = useStacks()
-  const { selectedEndpointId } = useEndpoints() 
+  const { selectedEndpointId, selectedSwarmId } = useEndpoints()
   const { fetchContainers, containers } = useContainer();
   const [ isLoading, setIsLoading ] = useState(false)
 
@@ -24,7 +24,7 @@ const Stacks = ({filterByStackName, navigation }: any) => {
       const loadPreferences = async () => {
         try {
           await Promise.all([
-            fetchStacks({ endpointId: selectedEndpointId, filters: {}, stackId: 0 } ),
+            fetchStacks({ endpointId: selectedEndpointId, filters: {}, stackId: 0, swarmId: selectedSwarmId } ),
             getStackOrderBy()
           ]);
         } catch (err) {
@@ -32,8 +32,8 @@ const Stacks = ({filterByStackName, navigation }: any) => {
         }
       };
   
-      loadPreferences();
-  }, []);
+      if (selectedEndpointId) loadPreferences();
+  }, [selectedEndpointId, selectedSwarmId]);
 
   const [fullStacks, setFullStacks] = useState<StackEntity[]>(fetchedStacks);
 
@@ -42,7 +42,15 @@ const Stacks = ({filterByStackName, navigation }: any) => {
     const stackFetched: any = await fetchStack({ endpointId: selectedEndpointId, filters: {}, stackId: stackId } )
     
     const stackFetchedResult: any = stackFetched.payload
-    await fetchContainers({ filters: { label: [`com.docker.compose.project=${stackFetchedResult.Name}`] }, endpointId: selectedEndpointId })
+
+    let filters = {}
+    if (selectedSwarmId) {
+        filters = { label: [`com.docker.stack.namespace=${stackFetchedResult.Name}`] }
+    } else {
+        filters = { label: [`com.docker.compose.project=${stackFetchedResult.Name}`] }
+    }
+
+    await fetchContainers({ filters, endpointId: selectedEndpointId })
 
     if (stackFetched) {
       setFullStacks(prevStacks =>
@@ -54,8 +62,16 @@ const Stacks = ({filterByStackName, navigation }: any) => {
 
   const fetchAll = async () => {
       setIsLoading(true)
-      const promises = fetchedStacks.map(stack =>
-        fetchContainers({ filters: { label: [`com.docker.compose.project=${stack.Name}`] }, endpointId: selectedEndpointId })
+
+      const promises = fetchedStacks.map(stack => {
+        let filters = {}
+        if (selectedSwarmId) {
+            filters = { label: [`com.docker.stack.namespace=${stack.Name}`] }
+        } else {
+            filters = { label: [`com.docker.compose.project=${stack.Name}`] }
+        }
+        return fetchContainers({ filters, endpointId: selectedEndpointId })
+        }
       );
 
       const results = await Promise.all(promises);
@@ -63,9 +79,11 @@ const Stacks = ({filterByStackName, navigation }: any) => {
   };
 
   useEffect(() => {
-    fetchAll();
-    setFullStacks(fetchedStacks)
-  }, [fetchedStacks.length, selectedEndpointId]);
+      if (fetchedStacks.length > 0) {
+        fetchAll();
+        setFullStacks(fetchedStacks);
+      }
+  }, [fetchedStacks.length, selectedEndpointId, selectedSwarmId]);
 
 
   useEffect(() => {
@@ -75,7 +93,7 @@ const Stacks = ({filterByStackName, navigation }: any) => {
       const filteredContainers = fetchedStacks.filter((p: StackEntity) => p.Name.toLowerCase().includes(filterByStackName.toLowerCase()))
       setFullStacks(filteredContainers)
     }
-  }, [filterByStackName]);
+  }, [filterByStackName, fetchedStacks]);
 
 
   useEffect(() => {
@@ -168,7 +186,7 @@ const createStyles = (theme: string) => {
       flexGrow: 1,
       paddingBottom: 0,
       backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',      
-      marginBottom: 10,
+      marginBottom: 0,
     },
     section: {
       marginBottom: 32

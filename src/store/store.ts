@@ -4,6 +4,7 @@ import endpointsReducer from '../features/endpoints/endpointsSlice';
 import authSlice from 'src/features/auth/authSlice';
 import loadingSlice from 'src/features/loading/loadingSlice';
 import stackSlice from 'src/features/stacks/stacksSlice';
+import swarmSlice from 'src/features/swarm/swarmSlice';
 
 export const store = configureStore({
   reducer: {
@@ -11,7 +12,8 @@ export const store = configureStore({
     endpoints: endpointsReducer,
     auth: authSlice,
     loading: loadingSlice,
-    stacks: stackSlice
+    stacks: stackSlice,
+    swarm: swarmSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -33,3 +35,4 @@ export const selectContainers = (state: RootState) => state.containers;
 export const selectEndpoints = (state: RootState) => state.endpoints;
 export const selectAuth = (state: RootState) => state.auth;
 export const selectLoading = (state: RootState) => state.loading;
+export const selectSwarm = (state: RootState) => state.swarm;

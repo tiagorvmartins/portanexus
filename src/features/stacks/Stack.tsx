@@ -32,7 +32,7 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
   const { theme } = useAuth();
   const styles = createStyles(theme);
 
-  const { selectedEndpointId } = useEndpoints();
+  const { selectedEndpointId, selectedSwarmId } = useEndpoints();
   const { fetchSingleContainer } = useContainer();
 
   const { startStack, stopStack, restartStack, fetchStacks } = useStacks()
@@ -43,7 +43,7 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
   }
 
   useEffect(() => {
-      fetchStacks({filters: stackContainersFilter, endpointId: selectedEndpointId});
+      fetchStacks({filters: stackContainersFilter, endpointId: selectedEndpointId, swarmId: selectedSwarmId});
   }, [selectedEndpointId]);
 
   const [ localLoading, setLocalLoading ] = useState(false)  

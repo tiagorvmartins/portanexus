@@ -185,7 +185,7 @@ const createStyles = (theme: string) => {
       flexGrow: 1,
       paddingBottom: 0,
       backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',
-      marginBottom: 10,
+      marginBottom: 0,
     },
     section: {
       marginBottom: 32

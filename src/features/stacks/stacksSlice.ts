@@ -77,8 +77,8 @@ export const stackSlice = createSlice({
       .addCase(fetchStacks.fulfilled, (state, action) => {
         state.stacks = action.payload;
         state.count = action.payload.length;
-        state.stacksRunning = action.payload.filter(p => p.Status === 2).length
-        state.stacksStopped = action.payload.filter(p => p.Status !== 2).length
+        state.stacksRunning = action.payload.filter(p => p.Status === 1).length
+        state.stacksStopped = action.payload.filter(p => p.Status !== 1).length
       })
   },
 });

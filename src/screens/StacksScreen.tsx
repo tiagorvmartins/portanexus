@@ -22,7 +22,7 @@ const StacksScreen = ({navigation}: any) => {
   const styles = createStyles(theme);
 
   const { stacksRunning, stacksStopped, fetchStacks } = useStacks();
-  const { selectedEndpointId, fetchEndpoints } = useEndpoints();
+  const { selectedEndpointId, selectedSwarmId, fetchEndpoints } = useEndpoints();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -31,10 +31,12 @@ const StacksScreen = ({navigation}: any) => {
   const fetchStacksFn = async () => {
     try {
       addLoadingComponent();
-      await fetchStacks({ endpointId: selectedEndpointId, filters: {} });
+      setRefreshing(true);
+      await fetchStacks({ endpointId: selectedEndpointId, filters: {}, swarmId: selectedSwarmId });
     } catch {
       showErrorToast("There was an error fetching stacks containers", theme)
     } finally {
+      setRefreshing(false);
       removeLoadingComponent();
     }
   }
@@ -63,7 +65,7 @@ const StacksScreen = ({navigation}: any) => {
       if (isLoggedIn) {
         onRefresh();
       }
-    }, [isLoggedIn]) 
+    }, [isLoggedIn])
   );
 
   return (
@@ -98,7 +100,7 @@ const StacksScreen = ({navigation}: any) => {
           
        </View>
        <Stacks navigation={navigation} filterByStackName={filterByStackName} refreshing={refreshing} onRefresh={onRefresh} />
-      <Footer />
+      <Footer navigation={navigation} activeTab="Stacks" />
     </View>
   );
 };

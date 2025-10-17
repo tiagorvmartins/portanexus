@@ -118,7 +118,7 @@ const ContainersScreen = ({navigation}: any) => {
           
        </View>
        <Containers navigation={navigation} onRefresh={onRefresh} filterByContainerName={filterByContainerName} refreshing={refreshing} containers={containers} />
-      <Footer />
+      <Footer navigation={navigation} activeTab="Containers" />
     </View>
   );
 };

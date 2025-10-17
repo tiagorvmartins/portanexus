@@ -136,7 +136,7 @@ const SettingsScreen = ({navigation}: any) => {
                     </Picker>
                 </View>
             </View>
-            <Footer />
+            <Footer navigation={navigation} activeTab="Settings" />
         </View>
     );
 };

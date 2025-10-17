@@ -4,18 +4,21 @@ import { AppDispatch, RootState } from './store';
 import {
   fetchEndpoints,
   getSelectedEndpoint,
-  setSelectedEndpoint
+  setSelectedEndpoint,
+  setSelectedSwarmId
 } from '../features/endpoints/endpointsSlice';
 
 
 export const useEndpoints = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { endpoints, selectedEndpointId } = useSelector((state: RootState) => state.endpoints);
+  const { endpoints, selectedEndpointId, selectedSwarmId } = useSelector((state: RootState) => state.endpoints);
   
   return {
     endpoints,
     selectedEndpointId,
+    selectedSwarmId,
     setSelectedEndpoint: (arg: string) => dispatch(setSelectedEndpoint(arg)),
+    setSelectedSwarmId: (arg: string) => dispatch(setSelectedSwarmId(arg)),
     getSelectedEndpoint: () => dispatch(getSelectedEndpoint()),
     fetchEndpoints: () => dispatch(fetchEndpoints()),
   };

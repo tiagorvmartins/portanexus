@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
 import { useAuth } from 'src/store/useAuth';
+import { BottomNavProps, BottomNav } from 'src/components/BottomNav'
 
-
-const Footer = () => {
+const Footer = ({navigation, activeTab}: any) => {
     const appVersion = Constants.expoConfig?.version;
     const appName = Constants.expoConfig?.name;
 
@@ -12,10 +12,16 @@ const Footer = () => {
     const styles = createStyles(theme);
 
     return (
-        <View style={styles.footer}>
-            <Text style={styles.appName}>{appName}</Text>
-            <Text style={styles.version}>{appVersion}</Text>
-        </View>
+        <>
+            {activeTab === 'Login' ?
+                (<View style={styles.footer}>
+                    <Text style={styles.appName}>{appName}</Text>
+                    <Text style={styles.version}>{appVersion}</Text>
+                </View>)
+            :
+                (<BottomNav navigation={navigation} activeTab={activeTab}></BottomNav>)
+            }
+        </>
     );
 };
 

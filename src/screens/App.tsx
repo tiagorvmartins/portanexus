@@ -12,6 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { useAuth } from 'src/store/useAuth';
 import LoginScreen from './LoginScreen';
+import ClusterScreen from './ClusterScreen';
 import StacksScreen from './StacksScreen';
 import ContainersScreen from './ContainerScreen';
 import EndpointLists from './EndpointsList';
@@ -27,6 +28,7 @@ const Stack = createNativeStackNavigator();
 
 function CustomDrawerContent(props: any) {
 
+  const { endpoints, selectedEndpointId } = useEndpoints();
   const {
     theme,
     setLoggedIn,
@@ -54,16 +56,40 @@ function CustomDrawerContent(props: any) {
     }
   };
 
+  const drawerItemsDockerType = [
+    { label: 'Endpoints', route: 'Endpoints' },
+    { label: 'Containers', route: 'Containers' },
+    { label: 'Stacks', route: 'Stacks' },
+    { label: 'Settings', route: 'Settings' },
+  ];
+
+  const drawerItemsDockerSwarmType = [
+    { label: 'Endpoints', route: 'Endpoints' },
+    { label: 'Cluster', route: 'Cluster' },
+    { label: 'Services', route: 'Services' },
+    { label: 'Tasks', route: 'Tasks' },
+    { label: 'Containers', route: 'Containers' },
+    { label: 'Stacks', route: 'Stacks' },
+    { label: 'Settings', route: 'Settings' },
+  ];
+
+  let endpointSelectedType = "docker"
+  if (endpoints && endpoints.length && selectedEndpointId && endpoints.find(p => p.Id === selectedEndpointId)?.Snapshots[0].Swarm) {
+      endpointSelectedType = "swarm"
+  }
+
+  let drawerItems = []
+  if (endpointSelectedType === 'docker') {
+    drawerItems = drawerItemsDockerType
+  } else {
+    drawerItems = drawerItemsDockerSwarmType
+  }
+
   return (
       <View style={styles.container}>
         <DrawerContentScrollView {...props}>
           <View style={styles.drawerItemsContainer}>
-            {[
-              { label: 'Endpoints', route: 'Endpoints' },
-              { label: 'Containers', route: 'Containers' },
-              { label: 'Stacks', route: 'Stacks' },
-              { label: 'Settings', route: 'Settings' },
-            ].map(({ label, route }) => (
+            {drawerItems.map(({ label, route }) => (
               <TouchableOpacity
                 key={route}
                 style={[
@@ -128,6 +154,7 @@ const DrawerNavigator = () => {
       }}
       initialRouteName="Endpoints" drawerContent={props => <CustomDrawerContent {...props} ></CustomDrawerContent>}>
       <Drawer.Screen name="Endpoints" component={EndpointLists} options={{ headerTitle:'' }} />
+      <Drawer.Screen name="Cluster" component={ClusterScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="Containers" component={ContainersScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="Stacks" component={StacksScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="Settings" component={SettingsScreen} options={{ headerTitle:'' }} />

@@ -13,7 +13,12 @@ export async function find(id: number): Promise<StackEntity> {
 
 export async function get(payload: GetStacksPayload): Promise<GetStacksResponse> {
     try {
-        const filters = encodeURIComponent(JSON.stringify(payload.filters))
+        let filters;
+        if (payload.swarmId)
+            filters = encodeURIComponent(JSON.stringify({...payload.filters, SwarmID: payload.swarmId}))
+        else
+            filters = encodeURIComponent(JSON.stringify({...payload.filters, EndpointID: payload.endpointId}))
+
         const stacks = (await HttpClient.Instance.get<StackEntity[]>(`/api/stacks?filters=${filters}`));
         const response: GetStacksResponse = {
             results: stacks.map((stack: any) => ({...stack})),

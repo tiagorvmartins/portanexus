@@ -19,9 +19,8 @@ const EndpointLists = ({navigation}: any) => {
   const { isLoggedIn, theme, haveLoginDetail, setLoggedIn } = useAuth();
   const styles = createStyles(theme);
 
-  const { endpoints, selectedEndpointId, getSelectedEndpoint, setSelectedEndpoint: setSelectedEndpointFn, fetchEndpoints } = useEndpoints();
+  const { endpoints, selectedEndpointId, getSelectedEndpoint, setSelectedEndpoint, setSelectedSwarmId, fetchEndpoints } = useEndpoints();
   const [refreshing, setRefreshing] = useState(false);
-  const [ endpointIdStateUi, setEndpointIdStateUi ] = useState(selectedEndpointId)
 
   const fetchEndpointsFn = async () => {
     try {
@@ -29,7 +28,7 @@ const EndpointLists = ({navigation}: any) => {
       await fetchEndpoints();
       const selectedEndpointOnStorage = await getSelectedEndpoint()
       if (getSelectedEndpointThunk.fulfilled.match(selectedEndpointOnStorage) && selectedEndpointOnStorage && selectedEndpointOnStorage.payload) {
-        await setSelectedEndpointFn(selectedEndpointOnStorage.payload)
+        await setSelectedEndpoint(selectedEndpointOnStorage.payload)
       }
      
     } catch {
@@ -39,9 +38,6 @@ const EndpointLists = ({navigation}: any) => {
     }
   };
 
-  useEffect(() => {
-     setEndpointIdStateUi(selectedEndpointId)
-  }, [selectedEndpointId]);
 
   const onRefresh = async () => {
 
@@ -76,10 +72,6 @@ const EndpointLists = ({navigation}: any) => {
     }
   }, [isLoggedIn]);
 
-  const setSelectedEndpoint = async(id: number) => {
-    setEndpointIdStateUi(id)
-    setSelectedEndpointFn(id.toString())
-  }
 
   const endpointType = (type: number) => {
     if (type === 1) {
@@ -102,10 +94,20 @@ const EndpointLists = ({navigation}: any) => {
           },
         ]
         }    
-        onPress={() => setSelectedEndpoint(item.Id)}
+        onPress={
+            () => {
+                setSelectedEndpoint(item.Id);
+                if(item.IsSwarm)
+                    setSelectedSwarmId(item.SwarmId)
+                else
+                    setSelectedSwarmId(0)
+            }
+        }
       >
         <Text style={styles.text}>Name: {item.Name}</Text>
-        <Text style={styles.text}>ID: {item.Id}</Text>
+        <Text style={styles.text}>Id: {item.Id}</Text>
+        <Text style={styles.text}>Swarm: {item.IsSwarm ? "true" : "false"}</Text>
+        <Text style={styles.text}>SwarmId: {item.IsSwarm ? item.SwarmId : "N/A"}</Text>
         <Text style={styles.text}>Type: {endpointType(item.Type)}</Text>
         <Text style={styles.text}>URL: {item.URL}</Text>
         <Text style={styles.text}>Group ID: {item.GroupId}</Text>
@@ -121,12 +123,12 @@ const EndpointLists = ({navigation}: any) => {
         <View style={styles.endpointsView}>
           {
               endpoints.map((endpoint: any) => (
-                  <EndpointItem key={endpoint.Id} selected={endpointIdStateUi === endpoint.Id} item={endpoint}/>
+                  <EndpointItem key={endpoint.Id} selected={selectedEndpointId === endpoint.Id} item={endpoint}/>
               ))
           }
         </View>
       </ScrollView>
-      <Footer />
+      <Footer navigation={navigation} activeTab="Endpoints" />
     </>
   );
 };
