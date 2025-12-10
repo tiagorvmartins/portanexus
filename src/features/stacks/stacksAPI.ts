@@ -14,10 +14,16 @@ export async function find(id: number): Promise<StackEntity> {
 export async function get(payload: GetStacksPayload): Promise<GetStacksResponse> {
     try {
         let filters;
-        if (payload.swarmId)
-            filters = encodeURIComponent(JSON.stringify({...payload.filters, SwarmID: payload.swarmId}))
-        else
+        // Use SwarmID filter if swarmId is provided and not 0 or empty string
+        // SwarmID is a Docker Swarm cluster ID (string hash like "z80kkn8yyirf9oage1hleqn7o")
+        if (payload.swarmId && payload.swarmId !== 0 && payload.swarmId !== '0' && payload.swarmId !== '') {
+            // Convert to string (handles both string and number inputs)
+            const swarmIdValue = String(payload.swarmId);
+            filters = encodeURIComponent(JSON.stringify({...payload.filters, SwarmID: swarmIdValue}))
+        } else {
+            // For non-swarm endpoints, filter by EndpointID
             filters = encodeURIComponent(JSON.stringify({...payload.filters, EndpointID: payload.endpointId}))
+        }
 
         const stacks = (await HttpClient.Instance.get<StackEntity[]>(`/api/stacks?filters=${filters}`));
         const response: GetStacksResponse = {
@@ -25,7 +31,8 @@ export async function get(payload: GetStacksPayload): Promise<GetStacksResponse>
             count: stacks.length,
         };
         return response;
-    } catch {
+    } catch (error) {
+        console.error("Error fetching stacks:", error);
         return {
             results: [],
             count: 0

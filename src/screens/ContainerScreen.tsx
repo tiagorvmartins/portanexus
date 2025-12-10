@@ -1,7 +1,7 @@
 
 import { Platform, StyleSheet, TextInput, TouchableOpacity, View, Text, Pressable, ViewStyle } from "react-native";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { showErrorToast } from "src/utils/toast";
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -21,69 +21,109 @@ const ContainersScreen = ({navigation}: any) => {
   const { theme } = useAuth()
   const styles = createStyles(theme);
 
-  const { fetchContainers, countContainersRunning, containers, count, countRunning } = useContainer();
+  const { fetchContainers, countContainersRunning, containers, count, countRunning, clearContainerState } = useContainer();
   const { selectedEndpointId, fetchEndpoints } = useEndpoints();
 
   const [refreshing, setRefreshing] = useState(false);
   const [filterByContainerName, setFilterByContainerName] = useState<string>("");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const hasRefreshedOnFocusRef = useRef(false);
 
-  const fetchRunningContainers = async () => {
+  // Store latest values in refs to avoid recreating callbacks
+  const selectedEndpointIdRef = useRef(selectedEndpointId);
+  const addLoadingRef = useRef(addLoadingComponent);
+  const removeLoadingRef = useRef(removeLoadingComponent);
+  const fetchEndpointsRef = useRef(fetchEndpoints);
+  const countContainersRunningRef = useRef(countContainersRunning);
+  const fetchContainersRef = useRef(fetchContainers);
+  const clearContainerStateRef = useRef(clearContainerState);
+  const setRefreshingRef = useRef(setRefreshing);
+  const setIsInitialLoadRef = useRef(setIsInitialLoad);
+
+  // Update refs on each render
+  selectedEndpointIdRef.current = selectedEndpointId;
+  addLoadingRef.current = addLoadingComponent;
+  removeLoadingRef.current = removeLoadingComponent;
+  fetchEndpointsRef.current = fetchEndpoints;
+  countContainersRunningRef.current = countContainersRunning;
+  fetchContainersRef.current = fetchContainers;
+  clearContainerStateRef.current = clearContainerState;
+  setRefreshingRef.current = setRefreshing;
+  setIsInitialLoadRef.current = setIsInitialLoad;
+
+  const performRefresh = useCallback(async () => {
+    const endpointId = selectedEndpointIdRef.current;
+    if (endpointId === -1) {
+      return;
+    }
+    addLoadingRef.current();
+    setRefreshingRef.current(true);    
     try {
-      addLoadingComponent();
       const runningPayload: Record<string, any> = { 
         status: ["running"]
       }
-      await countContainersRunning({ filters: runningPayload, endpointId: selectedEndpointId });
-    } catch {
-      showErrorToast("There was an error fetching running containers", theme)
+      await Promise.all([
+        fetchEndpointsRef.current(),
+        countContainersRunningRef.current({ filters: runningPayload, endpointId }),
+        fetchContainersRef.current({ endpointId, filters: {}})
+      ]);
+    } catch (err) {
+      // Errors are handled in individual functions
     } finally {
-      removeLoadingComponent();
+      setRefreshingRef.current(false);
+      removeLoadingRef.current();
+      setIsInitialLoadRef.current(false);
     }
-  };
+  }, []); // Empty deps - use refs for all values
 
-  const getAllContainers = async () => {
-    try {
-      addLoadingComponent();
-      await fetchContainers({ endpointId: selectedEndpointId, filters: {}});
-    } catch {
-      showErrorToast("There was an error fetching stacks containers", theme)
-    } finally {
-      removeLoadingComponent();
-    }
-  };
-
-  const getEndpoints = async () => {
-    try {
-      addLoadingComponent();
-      await fetchEndpoints();
-    } catch {
-      showErrorToast("There was an error fetching exited endpoints", theme)
-    } finally {
-      removeLoadingComponent();
-    }
-  };
-
-  const onRefresh = async () => {
-    addLoadingComponent();
-    setRefreshing(true);    
-    await Promise.all([
-      getEndpoints(),
-      fetchRunningContainers(),
-      getAllContainers()
-    ])
-    setRefreshing(false);
-    removeLoadingComponent();
-  };
+  const onRefresh = useCallback(() => {
+    performRefresh();
+  }, [performRefresh]);
 
   useEffect(() => {
-      getAllContainers();
-      fetchRunningContainers();
-  }, [ selectedEndpointId]);
+    if (selectedEndpointId === -1) {
+      return;
+    }
+    
+    // Reset focus ref when endpoint changes
+    hasRefreshedOnFocusRef.current = false;
+    
+    // Clear containers immediately when endpoint changes to show empty state while loading
+    clearContainerStateRef.current();
+    setIsInitialLoadRef.current(true);
+    
+    // Block loading until all data is fetched
+    addLoadingRef.current();
+    
+    // Fetch containers for the new endpoint
+    const runningPayload: Record<string, any> = { 
+      status: ["running"]
+    }
+    Promise.all([
+      countContainersRunningRef.current({ filters: runningPayload, endpointId: selectedEndpointId }),
+      fetchContainersRef.current({ endpointId: selectedEndpointId, filters: {}})
+    ]).finally(() => {
+      removeLoadingRef.current();
+      setIsInitialLoadRef.current(false);
+    });
+  }, [selectedEndpointId]); // Only depend on selectedEndpointId
+
+  const performRefreshRef = useRef(performRefresh);
+  performRefreshRef.current = performRefresh;
 
   useFocusEffect(
     useCallback(() => {
-        onRefresh();
-    }, []) 
+        const endpointId = selectedEndpointIdRef.current;
+        if (endpointId !== -1 && !hasRefreshedOnFocusRef.current) {
+          hasRefreshedOnFocusRef.current = true;
+          // Use the ref function directly to avoid dependency issues
+          performRefreshRef.current();
+        }
+        // Reset ref when screen loses focus (cleanup)
+        return () => {
+          hasRefreshedOnFocusRef.current = false;
+        };
+    }, []) // Empty deps - use refs for everything
   );
 
   return (

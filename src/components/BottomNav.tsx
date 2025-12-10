@@ -1,7 +1,8 @@
 import { View, Pressable, Text, StyleSheet } from "react-native"
-import { Layers, Server, Box, Activity, Slack as Stack } from "lucide-react-native"
+import { Layers, Server, Box, Activity, Boxes, Settings, SquareChartGantt, Cpu, Workflow } from "lucide-react-native"
 import { useAuth } from "src/store/useAuth";
 import { useEndpoints } from 'src/store/useEndpoints';
+import { useRoute } from '@react-navigation/native';
 interface BottomNavProps {
   activeTab: "Endpoints" | "Containers" | "Stacks" | "Settings"
 }
@@ -9,26 +10,35 @@ interface BottomNavProps {
 export function BottomNav({navigation, activeTab, isSwarm} : any) {
     const { theme } = useAuth()
     const { endpoints, selectedEndpointId } = useEndpoints();
+    const route = useRoute();
     const styles = createStyles(theme);
+    
+    // Get current route name from navigation - use route.name first, fallback to activeTab prop
+    const currentRouteName = route?.name || activeTab;
+    const effectiveActiveTab = currentRouteName || activeTab;
 
     let endpointSelectedType = "docker"
-    if (endpoints && endpoints.length && selectedEndpointId && endpoints.find(p => p.Id === selectedEndpointId)?.Snapshots[0].Swarm) {
+    const selectedEndpoint = endpoints?.find(p => Number(p.Id) === selectedEndpointId);
+    if (selectedEndpoint?.IsSwarm) {
         endpointSelectedType = "swarm"
     }
 
     const tabsDockerType = [
         { id: "Endpoints" as const, label: "Endpoints", icon: Server },
         { id: "Containers" as const, label: "Containers", icon: Box },
-        { id: "Stacks" as const, label: "Stacks", icon: Stack },
+        { id: "Stacks" as const, label: "Stacks", icon: Layers },
         { id: "Settings" as const, label: "Settings", icon: Activity },
     ]
 
     const tabsDockerSwarmType = [
         { id: "Endpoints" as const, label: "Endpoints", icon: Server },
-        { id: "Cluster" as const, label: "Cluster", icon: Layers },
+        { id: "Cluster" as const, label: "Cluster", icon: Boxes },
+        { id: "Nodes" as const, label: "Nodes", icon: Cpu },
+        { id: "Services" as const, label: "Services", icon: SquareChartGantt },
+        { id: "Tasks" as const, label: "Tasks", icon: Workflow },
         { id: "Containers" as const, label: "Containers", icon: Box },
-        { id: "Stacks" as const, label: "Stacks", icon: Stack },
-        { id: "Settings" as const, label: "Settings", icon: Activity },
+        { id: "Stacks" as const, label: "Stacks", icon: Layers },
+        { id: "Settings" as const, label: "Settings", icon: Settings },
     ]
 
 
@@ -38,13 +48,13 @@ export function BottomNav({navigation, activeTab, isSwarm} : any) {
     } else {
       tabs = tabsDockerSwarmType
     }
-
+    
     return (
       <View style={styles.container}>
         <View style={styles.row}>
           {tabs.map((tab) => {
             const Icon = tab.icon
-            const isActive = activeTab === tab.id
+            const isActive = effectiveActiveTab === tab.id
 
             return (
               <Pressable

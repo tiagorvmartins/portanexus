@@ -11,6 +11,7 @@ import {
   fetchSingleContainer,
   setSelectedContainer,
   countContainersRunning,
+  clearContainerState,
 } from '../features/container/containerSlice';
 import { AppDispatch } from './store';
 import GetContainersPayload from 'src/types/GetContainersPayload';
@@ -57,5 +58,7 @@ export const useContainer = () => {
 
     stopContainer: (payload: ControlContainerPayload) =>
       dispatch(stopContainer(payload)),
+
+    clearContainerState: () => dispatch(clearContainerState()),
   };
 };

@@ -1,26 +1,38 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { getSwarmStatus } from './swarmAPI';
-import { GetSwarmPayload } from './GetSwarmPayload';
-import { getItemAsync, setItemAsync } from '../util/storage';
-import { RootState } from 'src/store/store';
-import SecureStoreEntry from 'src/enums/SecureStoreEntry';
+import { getSwarmStatus, getSwarmEvents } from './swarmAPI';
+import GetSwarmPayload from './GetSwarmPayload';
+import GetSwarmStatusResponse from './GetSwarmResponse';
+import GetSwarmServicesResponse from './GetSwarmServicesResponse';
+import GetSwarmTasksResponse from './GetSwarmTasksResponse';
+import { getSwarmServices, getSwarmTasks } from './swarmAPI';
 import SwarmSummaryStatus from "src/types/SwarmSummaryStatus";
 import ServiceEntity from "src/types/ServiceEntity";
 import TaskEntity from "src/types/TaskEntity";
 
 interface SwarmState {
   healthy: boolean;
-  status: SwarmSummaryStatus;
+  status: SwarmSummaryStatus | null;
   services: ServiceEntity[];
   tasks: TaskEntity[];
+  recentEvents: any[];
 }
 
 const initialState: SwarmState = {
   healthy: false,
   status: null,
   services: [],
-  tasks: []
+  tasks: [],
+  recentEvents: []
 };
+export const fetchSwarmEvents = createAsyncThunk<
+  any[],
+  GetSwarmPayload
+>(
+  "swarm/fetchSwarmEvents",
+  async (payload: GetSwarmPayload) => {
+    return await getSwarmEvents(payload);
+  }
+);
 
 export const fetchSwarmStatus = createAsyncThunk<
     GetSwarmStatusResponse,
@@ -55,7 +67,15 @@ export const fetchSwarmTasks = createAsyncThunk<
 export const swarmSlice = createSlice({
   name: 'swarm',
   initialState,
-  reducers: {},
+  reducers: {
+    clearSwarmState: (state) => {
+      state.healthy = false;
+      state.status = null;
+      state.services = [];
+      state.tasks = [];
+      state.recentEvents = [];
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchSwarmStatus.fulfilled, (state, action) => {
@@ -67,6 +87,9 @@ export const swarmSlice = createSlice({
       })
       .addCase(fetchSwarmTasks.fulfilled, (state, action) => {
         state.tasks = action.payload.results;
+      })
+      .addCase(fetchSwarmEvents.fulfilled, (state, action) => {
+        state.recentEvents = action.payload;
       })
   },
 });

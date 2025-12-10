@@ -44,7 +44,8 @@ class HttpClient implements IHttpClient {
 
         this.responseInterceptorId = axios.interceptors.response.use(undefined, (err) => {
           if (err.response) {
-            if (err.response.status === 401 || 403) {
+            const status = err.response.status;
+            if (status === 401 || status === 403) {
               console.error("Authorization error:", err);
             }
           }

@@ -21,38 +21,70 @@ const StacksScreen = ({navigation}: any) => {
   
   const styles = createStyles(theme);
 
-  const { stacksRunning, stacksStopped, fetchStacks } = useStacks();
-  const { selectedEndpointId, selectedSwarmId, fetchEndpoints } = useEndpoints();
+  const { stacksRunning, stacksStopped, fetchStacks, clearStacksState } = useStacks();
+  const { selectedEndpointId, selectedSwarmId, fetchEndpoints, endpoints } = useEndpoints();
 
   const [refreshing, setRefreshing] = useState(false);
-
   const [filterByStackName, setFilterByStackName] = useState<string>("");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchStacksFn = async () => {
+    // Check if the endpoint is a swarm endpoint
+    const selectedEndpoint = endpoints.find(e => Number(e.Id) === selectedEndpointId);
+    const isSwarm = selectedEndpoint?.IsSwarm ?? false;
+    // Use swarmId if endpoint is a swarm
+    // Priority: selectedSwarmId > endpoint.SwarmId > 0
+    // SwarmId is a Docker Swarm cluster ID (string hash), not a number
+    let swarmIdToUse: string | number = 0;
+    if (isSwarm) {
+      if (selectedSwarmId && selectedSwarmId !== 0 && selectedSwarmId !== '0') {
+        // Convert to string if it's a number, otherwise use as-is
+        swarmIdToUse = typeof selectedSwarmId === 'string' ? selectedSwarmId : String(selectedSwarmId);
+      } else if (selectedEndpoint?.SwarmId) {
+        // endpoint.SwarmId is always a string (Docker Swarm cluster ID)
+        swarmIdToUse = selectedEndpoint.SwarmId;
+      }
+    }
     try {
-      addLoadingComponent();
-      setRefreshing(true);
-      await fetchStacks({ endpointId: selectedEndpointId, filters: {}, swarmId: selectedSwarmId });
+      await fetchStacks({ endpointId: selectedEndpointId, filters: {}, swarmId: swarmIdToUse });
     } catch {
-      showErrorToast("There was an error fetching stacks containers", theme)
-    } finally {
-      setRefreshing(false);
-      removeLoadingComponent();
+      showErrorToast("There was an error fetching stacks", theme)
     }
   }
 
   const onRefresh = async () => {
     addLoadingComponent();
     setRefreshing(true);
-    if(isLoggedIn){
-      await Promise.all([
-        fetchEndpoints(),
-        fetchStacksFn(),
-      ])
-    }    
-    setRefreshing(false);
-    removeLoadingComponent();
+    try {
+      if(isLoggedIn){
+        await Promise.all([
+          fetchEndpoints(),
+          fetchStacksFn(),
+        ]);
+      }
+    } finally {
+      setRefreshing(false);
+      removeLoadingComponent();
+      setIsInitialLoad(false);
+    }
   };
+
+  useEffect(() => {
+    if (selectedEndpointId === -1) {
+      return;
+    }
+    
+    // Clear stacks when endpoint changes
+    clearStacksState();
+    setIsInitialLoad(true);
+    
+    // Block loading until stacks are fetched
+    addLoadingComponent();
+    fetchStacksFn().finally(() => {
+      removeLoadingComponent();
+      setIsInitialLoad(false);
+    });
+  }, [selectedEndpointId, selectedSwarmId]);
 
   useEffect(() => {
     if(!isLoggedIn) {

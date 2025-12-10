@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import Loading from "../../components/Loading";
 import moment from "moment";
@@ -13,24 +13,58 @@ import { fetchSingleContainer as fetchSingleContainerThunk } from "src/features/
 import ContainerEntity from "src/types/ContainerEntity";
 
 const StatusDot = ({ stackContainers, styles, status, isLoading}: any) => {
+  // Create a stable key from container states for memoization
+  const containerStatesKey = useMemo(() => {
+    if (!stackContainers || stackContainers.length === 0) return 'empty';
+    // Create a stable string representation of container states
+    return stackContainers.map((c: any) => `${c.Id}:${c.State}`).join('|');
+  }, [stackContainers]);
   
-  let dotStyle;
-  if (isLoading)
-    dotStyle = styles.dotLoading
-  else if (status === 2)
-    dotStyle = styles.dotInactive
-  else if (status === 1 && stackContainers.length > 0 && stackContainers.every((p: any) => p.State === "running")) 
-    dotStyle = styles.dotActive
-  else if (status === 1) 
-    dotStyle = styles.dotPartialActive;
+  const allRunning = useMemo(() => {
+    if (!stackContainers || stackContainers.length === 0) return false;
+    // Check if all containers are running
+    return stackContainers.every((p: any) => p.State === "running");
+  }, [containerStatesKey]);
+
+  const allStopped = useMemo(() => {
+    if (!stackContainers || stackContainers.length === 0) return false;
+    // Check if all containers are stopped or exited
+    return stackContainers.every((p: any) => {
+      const state = (p.State || "").toLowerCase();
+      return state === "stopped" || state === "exited" || state === "dead";
+    });
+  }, [containerStatesKey]);
+
+  const dotStyle = useMemo(() => {
+    if (isLoading)
+      return styles.dotLoading;
+    if (status === 2)
+      return styles.dotInactive;
+    if (status === 1) {
+      if (!stackContainers || stackContainers.length === 0) {
+        return styles.dotPartialActive;
+      }
+      // If all containers are stopped/exited, show red (inactive)
+      if (allStopped) {
+        return styles.dotInactive;
+      }
+      // If all containers are running, show green (active)
+      if (allRunning) {
+        return styles.dotActive;
+      }
+      // Mixed state: some running, some not -> yellow (partial)
+      return styles.dotPartialActive;
+    }
+    return styles.dotInactive;
+  }, [isLoading, status, allRunning, allStopped, styles]);
 
   return <View style={dotStyle} />;
 };
 
-const Stack = ({ navigation, stackName, status, stackId, creationDate, containers, update, isLoading }: any) => {
+const Stack = ({ navigation, stackName, status, stackId, creationDate, containers, update, isLoading, fetchContainersForStack }: any) => {
 
   const { theme } = useAuth();
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const { selectedEndpointId, selectedSwarmId } = useEndpoints();
   const { fetchSingleContainer } = useContainer();
@@ -38,31 +72,30 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
   const { startStack, stopStack, restartStack, fetchStacks } = useStacks()
   
   const [expanded, setExpanded] = useState(false);
-  const stackContainersFilter: Record<string, any> = {
-        label: [`com.docker.compose.project=${stackName}`]
-  }
-
+  
+  // Use containers directly - memoization happens at parent level
+  const stackContainers: ContainerEntity[] = containers || [];
+  
+  // Fetch containers when stack is expanded for the first time
   useEffect(() => {
-      fetchStacks({filters: stackContainersFilter, endpointId: selectedEndpointId, swarmId: selectedSwarmId});
-  }, [selectedEndpointId]);
+    if (expanded && stackContainers.length === 0 && fetchContainersForStack) {
+      fetchContainersForStack();
+    }
+  }, [expanded, stackContainers.length, fetchContainersForStack]);
 
   const [ localLoading, setLocalLoading ] = useState(false)  
   
-  function ageInDaysAndHours(dateUnix: number): string {
-    const momentDate = moment.unix(dateUnix)
+  const ageInDaysAndHours = useMemo(() => {
+    const momentDate = moment.unix(creationDate);
     const currentDate = moment();
     const days = currentDate.diff(momentDate, 'days');
-
     return `${days}d`;
-  }
-  
-  // Use containers from props as the single source of truth
-  const stackContainers: ContainerEntity[] = containers || [];
+  }, [creationDate]);
 
   const start = async (stackId: number) => {
     setLocalLoading(true)
     try {
-      await startStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
+      await startStack({stackId: stackId, endpointId: selectedEndpointId, filters: {}, swarmId: selectedSwarmId || 0 });
       await update(stackId)
       setExpanded(false);
       showSuccessToast("Started stack successfully!", theme)
@@ -75,7 +108,7 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
   const stop = async (stackId: number) => {
     setLocalLoading(true)
     try {
-      await stopStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
+      await stopStack({stackId: stackId, endpointId: selectedEndpointId, filters: {}, swarmId: selectedSwarmId || 0 });
       await update(stackId)
       setExpanded(false);
       showSuccessToast("Stopped stack successfully!", theme)
@@ -88,7 +121,7 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
   const restart = async (stackId: number) => {
     setLocalLoading(true)
     try {
-      await restartStack({stackId: stackId, endpointId: selectedEndpointId, filters: {} });
+      await restartStack({stackId: stackId, endpointId: selectedEndpointId, filters: {}, swarmId: selectedSwarmId || 0 });
       await update(stackId)
       setExpanded(false);
       showSuccessToast("Restarted stack successfully!", theme)
@@ -110,14 +143,17 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
     // Local collapse state per container can be handled via global slice or avoided; no-op for now
   }, [containers]);
 
+  const handleToggleExpanded = useCallback((e: any) => {
+    setExpanded(prev => !prev);
+    e.stopPropagation();
+  }, []);
+
   return (
     <View style={styles.card}>
       <TouchableOpacity
         disabled={status !== 1}
-        onPress={(e) => {
-          setExpanded(!expanded);
-          e.stopPropagation();
-        }}
+        onPress={handleToggleExpanded}
+        activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderTitle}>
@@ -151,31 +187,29 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
             </TouchableOpacity>
           </View>
         </View>
-        <Text style={styles.headerSubText}>Age: {ageInDaysAndHours(creationDate)}</Text>
+        <Text style={styles.headerSubText}>Age: {ageInDaysAndHours}</Text>
         {expanded &&
           (
-            (((localLoading)) &&
+            (localLoading &&
               <Loading></Loading>)
             ||
             (stackContainers.length > 0 &&
               <>
-                {
-                  stackContainersFilter && stackContainers.map((section: any) => (
-                    <Container 
-                      navigation={navigation} 
-                      key={section.Id} 
-                      containerName={section.Names[0].substring(1)} 
-                      collapsed={section.collapsed} 
-                      state={section.State} 
-                      status={section.Status} 
-                      containerId={section.Id} 
-                      creationDate={section.Created} 
-                      onUpdate={updateSpecificContainer} 
-                      onClick={closeAllExceptSpecificContainer}
-                      updateParentStack={update}
-                      stackId={stackId} /> 
-                  ))
-                }
+                {stackContainers.map((section: any) => (
+                  <Container 
+                    navigation={navigation} 
+                    key={section.Id} 
+                    containerName={section.Names?.[0]?.substring(1) || section.Names?.[0] || 'Unknown'} 
+                    collapsed={section.collapsed} 
+                    state={section.State} 
+                    status={section.Status} 
+                    containerId={section.Id} 
+                    creationDate={section.Created} 
+                    onUpdate={updateSpecificContainer} 
+                    onClick={closeAllExceptSpecificContainer}
+                    updateParentStack={update}
+                    stackId={stackId} /> 
+                ))}
               </>
             ))
         }
@@ -320,6 +354,5 @@ const createStyles = (theme: string) => {
 
   });
 };
-
 
 export default Stack;

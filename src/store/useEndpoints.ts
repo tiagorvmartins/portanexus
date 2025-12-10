@@ -17,8 +17,8 @@ export const useEndpoints = () => {
     endpoints,
     selectedEndpointId,
     selectedSwarmId,
-    setSelectedEndpoint: (arg: string) => dispatch(setSelectedEndpoint(arg)),
-    setSelectedSwarmId: (arg: string) => dispatch(setSelectedSwarmId(arg)),
+    setSelectedEndpoint: (arg: string | number) => dispatch(setSelectedEndpoint(arg)),
+    setSelectedSwarmId: (arg: string | number | null) => dispatch(setSelectedSwarmId(arg)),
     getSelectedEndpoint: () => dispatch(getSelectedEndpoint()),
     fetchEndpoints: () => dispatch(fetchEndpoints()),
   };

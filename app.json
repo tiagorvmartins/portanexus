@@ -3,7 +3,7 @@
     "newArchEnabled": true,
     "name": "portanexus",
     "slug": "portanexus",
-    "version": "0.2.2",
+    "version": "0.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon_adaptive.png",
     "scheme": "portanexus",
@@ -31,11 +31,16 @@
       "expo-router",
       "expo-localization",
       "expo-secure-store",
-      ["expo-build-properties", {
-        "android": {
-          "usesCleartextTraffic": true
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
-      }]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

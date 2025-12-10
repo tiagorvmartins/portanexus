@@ -84,37 +84,54 @@ const EndpointLists = ({navigation}: any) => {
     return "N/A";
   }
 
-  const EndpointItem = ({ item, selected }: any) => (
-    
-      <Pressable
-        style={[
-          styles.card,
-          {
-            backgroundColor: selected && theme === 'light' && '#05E6F2'+40 || selected && theme === 'dark' && '#05E6F2'+80 || ''
-          },
-        ]
-        }    
-        onPress={
-            () => {
-                setSelectedEndpoint(item.Id);
-                if(item.IsSwarm)
-                    setSelectedSwarmId(item.SwarmId)
-                else
-                    setSelectedSwarmId(0)
-            }
-        }
-      >
-        <Text style={styles.text}>Name: {item.Name}</Text>
-        <Text style={styles.text}>Id: {item.Id}</Text>
-        <Text style={styles.text}>Swarm: {item.IsSwarm ? "true" : "false"}</Text>
-        <Text style={styles.text}>SwarmId: {item.IsSwarm ? item.SwarmId : "N/A"}</Text>
-        <Text style={styles.text}>Type: {endpointType(item.Type)}</Text>
-        <Text style={styles.text}>URL: {item.URL}</Text>
-        <Text style={styles.text}>Group ID: {item.GroupId}</Text>
-        <Text style={styles.text}>Public URL: {item.PublicURL || "N/A"}</Text>
-    </Pressable>
-    
-  );
+  const EndpointItem = ({ item, selected }: any) => {
+    const status = item.Status === 'DOWN' ? 'DOWN' : 'UP';
+    return (
+        <Pressable
+          style={[
+            styles.card,
+            {
+              backgroundColor: selected && theme === 'light' && '#05E6F2'+40 || selected && theme === 'dark' && '#05E6F2'+80 || ''
+            },
+          ]
+          }    
+          onPress={async () => {
+              if (item.Status === 'DOWN') {
+                showErrorToast("Endpoint is down. Please select another endpoint.", theme);
+                return;
+              }
+              const endpointIdNum = Number(item.Id);
+              await setSelectedEndpoint(endpointIdNum);
+              if(item.IsSwarm && item.SwarmId)
+                  await setSelectedSwarmId(item.SwarmId)
+              else
+                  await setSelectedSwarmId('0') // Use string '0' to match the type
+          }}
+        >
+          <View style={styles.cardHeader}>
+            <Text style={styles.text}>Name: {item.Name}</Text>
+            <View style={styles.statusContainer}>
+              <View style={styles.swarmLabel}>
+                <Text style={[styles.swarmLabelText, { color: theme === 'light' ? '#333333' : '#e0e0e0' }]}>
+                  {item.IsSwarm ? 'SWARM' : 'NON-SWARM'}
+                </Text>
+              </View>
+              <View style={[styles.statusPill, status === 'UP' ? styles.statusUp : styles.statusDown]}>
+                <Text style={styles.statusText}>{status}</Text>
+              </View>
+            </View>
+            
+          </View>
+          <Text style={styles.text}>Id: {item.Id}</Text>
+          <Text style={styles.text}>Swarm: {item.IsSwarm ? "true" : "false"}</Text>
+          <Text style={styles.text}>SwarmId: {item.IsSwarm && item.SwarmId ? item.SwarmId : "N/A"}</Text>
+          <Text style={styles.text}>Type: {endpointType(item.Type)}</Text>
+          <Text style={styles.text}>URL: {item.URL}</Text>
+          <Text style={styles.text}>Group ID: {item.GroupId}</Text>
+          <Text style={styles.text}>Public URL: {item.PublicURL || "N/A"}</Text>
+      </Pressable>
+    );
+  };
 
   return (
     <>
@@ -122,9 +139,16 @@ const EndpointLists = ({navigation}: any) => {
         <AppHeader navigation={navigation} />
         <View style={styles.endpointsView}>
           {
-              endpoints.map((endpoint: any) => (
-                  <EndpointItem key={endpoint.Id} selected={selectedEndpointId === endpoint.Id} item={endpoint}/>
-              ))
+              endpoints.map((endpoint: any) => {
+                  const endpointIdNum = Number(endpoint.Id);
+                  return (
+                    <EndpointItem
+                      key={endpoint.Id}
+                      selected={selectedEndpointId === endpointIdNum}
+                      item={{ ...endpoint, Id: endpointIdNum }}
+                    />
+                  );
+              })
           }
         </View>
       </ScrollView>
@@ -173,6 +197,44 @@ const createStyles = (theme: string) => {
     text: {
       fontSize: 12,
       color: theme === 'light' ? '#333333' : '#e0e0e0',
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    statusPill: {
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+    },
+    statusText: {
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+    },
+    statusUp: {
+      backgroundColor: '#28a745',
+    },
+    statusDown: {
+      backgroundColor: '#dc3545',
+    },
+    swarmLabel: {
+      borderWidth: 1.5,
+      borderColor: theme === 'light' ? '#666666' : '#888888',
+      borderRadius: 12,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      backgroundColor: 'transparent',
+      marginRight: 8,
+    },
+    swarmLabelText: {
+      fontSize: 10,
+      fontWeight: 'bold',
     },
   });
 };

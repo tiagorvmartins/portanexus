@@ -1,10 +1,14 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { StyleSheet, FlatList, RefreshControl } from "react-native";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
+import { StyleSheet, FlatList, Platform } from "react-native";
+import { RefreshControl as NativeRefreshControl } from 'react-native';
+import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
 import { useEndpoints } from "src/store/useEndpoints";
 import ContainerEntity from "../../types/ContainerEntity";
 import { useContainer } from "src/store/useContainer";
 import { useAuth } from "src/store/useAuth";
 import Container from "./Container";
+
+const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
 const Containers = ({filterByContainerName, refreshing, onRefresh, navigation, containers: containersArg }: any) => {
   const { theme, containerOrderBy, getContainerOrderBy } = useAuth()
@@ -27,41 +31,41 @@ const Containers = ({filterByContainerName, refreshing, onRefresh, navigation, c
 
   const { selectedEndpointId } = useEndpoints();
 
-  const [ containers, setContainers ] = useState<ContainerEntity[]>(containersArg);
-  const [ updateContainers, setUpdateContainers ] = useState<boolean>(false);
-
   const { fetchSingleContainer } = useContainer();
 
-  useEffect(() => {
-    if (!filterByContainerName) {
-      setContainers(containersArg)
-    } else {
-      const filteredContainers = containersArg.filter((p: ContainerEntity) => p.Names[0].toLowerCase().includes(filterByContainerName.toLowerCase()))
-      setContainers(filteredContainers)
+  // Combine filtering and sorting in a single memoized computation
+  const processedContainers = useMemo(() => {
+    let result = [...containersArg];
+    
+    // Apply filtering first
+    if (filterByContainerName) {
+      result = result.filter((p: ContainerEntity) => 
+        p.Names[0]?.toLowerCase().includes(filterByContainerName.toLowerCase())
+      );
     }
-  }, [filterByContainerName]);
-  
-  useEffect(() => {
-    let sortedData = [...containersArg];
+    
+    // Apply sorting
     switch (containerOrderBy) {
       case "createdDateAsc":
-        sortedData.sort((a: ContainerEntity, b: ContainerEntity) => parseInt(a.Created) - parseInt(b.Created));
+        result.sort((a: ContainerEntity, b: ContainerEntity) => parseInt(a.Created) - parseInt(b.Created));
         break;
       case "createdDateDesc":
-        sortedData.sort((a, b) => parseInt(b.Created) - parseInt(a.Created));
+        result.sort((a, b) => parseInt(b.Created) - parseInt(a.Created));
         break;
       case "nameAsc":
-        sortedData.sort((a, b) => a.Names[0].localeCompare(b.Names[0]));
+        result.sort((a, b) => (a.Names[0] || '').localeCompare(b.Names[0] || ''));
         break;
       case "nameDesc":
-        sortedData.sort((a, b) => b.Names[0].localeCompare(a.Names[0]));
+        result.sort((a, b) => (b.Names[0] || '').localeCompare(a.Names[0] || ''));
         break;
       default:
         break;
     }
-    setContainers(sortedData);
-    setUpdateContainers(!updateContainers)
-  }, [containerOrderBy, containersArg]);
+    
+    return result;
+  }, [containersArg, filterByContainerName, containerOrderBy]);
+
+  const [expandedContainerId, setExpandedContainerId] = useState<number | null>(null);
 
   const updateSpecificContainer = useCallback(async (containerId: number) => {
     const updateContainerId: Record<string, any> = { 
@@ -71,30 +75,14 @@ const Containers = ({filterByContainerName, refreshing, onRefresh, navigation, c
     const updatedContainerResult: any = await fetchSingleContainer({ endpointId: selectedEndpointId, filters: updateContainerId } );
     const singleContainer = updatedContainerResult.payload;
 
-    setContainers((prevValue) => {
-      const containerIndex = prevValue.findIndex(c => c.Id === containerId);
-      if (containerIndex !== -1) {
-        const updatedContainers = [...prevValue];
-        updatedContainers[containerIndex] = singleContainer;
-        return updatedContainers;
-      } else {
-        return [...prevValue, singleContainer];
-      }
-    });
-    setUpdateContainers(!updateContainers)
-    onRefresh()
+    // Refresh will update containers from Redux, no need to update local state
+    onRefresh();
 
-  }, [selectedEndpointId, containers]);
+  }, [selectedEndpointId, onRefresh, fetchSingleContainer]);
 
-  const closeAllExceptSpecificContainer = useCallback(async (containerId: number) => {
-    setContainers((prevValue) => {
-      return prevValue.map(container => ({
-        ...container,
-        Collapsed: container.Id === containerId ? !((container as any).Collapsed) : true
-      }));
-    });
-    setUpdateContainers(!updateContainers)
-  }, [containers]);
+  const closeAllExceptSpecificContainer = useCallback((containerId: number) => {
+    setExpandedContainerId(prev => prev === containerId ? null : containerId);
+  }, []);
 
   return (
         <FlatList
@@ -105,12 +93,12 @@ const Containers = ({filterByContainerName, refreshing, onRefresh, navigation, c
             />
           }
           nestedScrollEnabled
-          data={containers}
+          data={processedContainers}
           renderItem={({item}) => 
               <Container
                   navigation={navigation}
-                  containerName={item.Names[0].substring(1)} 
-                  collapsed={item.Collapsed} 
+                  containerName={item.Names[0]?.substring(1) || ''} 
+                  collapsed={expandedContainerId !== item.Id} 
                   state={item.State} 
                   status={item.Status} 
                   containerId={item.Id} 
@@ -121,8 +109,8 @@ const Containers = ({filterByContainerName, refreshing, onRefresh, navigation, c
           }
           keyExtractor={item => item.Id.toString()}
           style={styles.scrollView}
-          extraData={updateContainers}>
-        </FlatList>
+          extraData={expandedContainerId}
+        />
     )
 };
 

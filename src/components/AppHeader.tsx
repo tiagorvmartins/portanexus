@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Switch, StyleSheet, Image, TouchableOpacity, Modal, Text, SafeAreaView } from 'react-native';
+import { View, Switch, StyleSheet, Image, TouchableOpacity, Modal, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/FontAwesome';
 import { useAuth } from 'src/store/useAuth';
 import SecureStoreEntry from 'src/enums/SecureStoreEntry';
@@ -137,7 +138,7 @@ const createStyles = (theme: string) => {
             borderColor: "#ccc",
         },
         topHeaderContainer: {
-            marginTop: 16,
+            marginTop: 32,
             flexDirection: 'row',
             alignItems: 'center',
             marginLeft: 8,

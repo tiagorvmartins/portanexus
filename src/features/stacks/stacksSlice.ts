@@ -71,7 +71,14 @@ export const restartStack = createAsyncThunk<
 export const stackSlice = createSlice({
   name: 'stacks',
   initialState,
-  reducers: {},
+  reducers: {
+    clearStacksState: (state) => {
+      state.stacks = [];
+      state.count = 0;
+      state.stacksRunning = 0;
+      state.stacksStopped = 0;
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchStacks.fulfilled, (state, action) => {
