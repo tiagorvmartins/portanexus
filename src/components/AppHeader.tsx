@@ -138,7 +138,6 @@ const createStyles = (theme: string) => {
             borderColor: "#ccc",
         },
         topHeaderContainer: {
-            marginTop: 32,
             flexDirection: 'row',
             alignItems: 'center',
             marginLeft: 8,

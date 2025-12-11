@@ -12,7 +12,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web -c",
     "web-production": "expo export -p web && npx workbox-cli generateSW workbox-config.js",
-    "build-android": "eas build --platform android --local --non-interactive --profile preview --output portanexus_0.2.2.apk",
+    "build-android": "eas build --platform android --local --non-interactive --profile preview --output portanexus_0.3.0.apk",
     "test": "jest --watchAll",
     "lint": "expo lint",
     "postinstall": "patch-package"

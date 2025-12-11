@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, ActivityIndicator, Pressable } from 'react-native';
 import { RefreshControl as NativeRefreshControl } from 'react-native';
 import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
-import { Activity, CheckCircle2, AlertCircle, XCircle, Server, Box } from 'lucide-react-native';
+import { Workflow, CheckCircle2, AlertCircle, XCircle, Server, Box } from 'lucide-react-native';
 import AppHeader from 'src/components/AppHeader';
 import Footer from 'src/components/Footer';
 import { useAuth } from 'src/store/useAuth';
@@ -12,6 +12,7 @@ import { getSwarmTasks } from 'src/features/swarm/swarmAPI';
 import GetSwarmPayload from 'src/features/swarm/GetSwarmPayload';
 import { showErrorToast } from 'src/utils/toast';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
@@ -108,7 +109,7 @@ const TasksScreen = ({navigation}: any) => {
     if (state === "failed" || state === "rejected") {
       return <AlertCircle size={16} color="#ef4444" />;
     }
-    return <Activity size={16} color="#f59e0b" />;
+    return <Workflow size={16} color="#f59e0b" />;
   };
 
   const formatDate = (dateString: string) => {
@@ -141,7 +142,7 @@ const TasksScreen = ({navigation}: any) => {
       <View style={styles.taskCard}>
         <View style={styles.taskHeader}>
           <View style={styles.taskHeaderLeft}>
-            <Activity size={18} color={styles.primary.color} style={{ marginRight: 8 }} />
+            <Workflow size={18} color={styles.primary.color} style={{ marginRight: 8 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.taskName}>{taskName}</Text>
               <Text style={styles.taskId}>ID: {taskId.substring(0, 12)}</Text>
@@ -218,8 +219,11 @@ const TasksScreen = ({navigation}: any) => {
     }).length,
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {paddingTop: insets.top }]}
+      contentContainerStyle={{ paddingBottom: insets.bottom }}>
       <AppHeader navigation={navigation} screen="tasks" />
       <ScrollView
         style={styles.scrollView}
@@ -234,7 +238,7 @@ const TasksScreen = ({navigation}: any) => {
           </View>
         ) : tasks.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Activity size={48} color={theme === 'light' ? '#9ca3af' : '#6b7280'} />
+            <Workflow size={48} color={theme === 'light' ? '#9ca3af' : '#6b7280'} />
             <Text style={styles.emptyText}>No tasks found</Text>
           </View>
         ) : (

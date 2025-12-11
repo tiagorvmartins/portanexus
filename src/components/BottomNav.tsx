@@ -27,7 +27,7 @@ export function BottomNav({navigation, activeTab, isSwarm} : any) {
         { id: "Endpoints" as const, label: "Endpoints", icon: Server },
         { id: "Containers" as const, label: "Containers", icon: Box },
         { id: "Stacks" as const, label: "Stacks", icon: Layers },
-        { id: "Settings" as const, label: "Settings", icon: Activity },
+        { id: "Settings" as const, label: "Settings", icon: Settings },
     ]
 
     const tabsDockerSwarmType = [

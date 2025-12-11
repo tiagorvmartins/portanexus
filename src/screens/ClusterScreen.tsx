@@ -10,6 +10,7 @@ import { useSwarm } from "src/store/useSwarm";
 import { useEndpoints } from "src/store/useEndpoints";
 import { showErrorToast } from 'src/utils/toast';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ClusterScreen = ({navigation}: any) => {
   const { theme } = useAuth()
@@ -95,11 +96,12 @@ const ClusterScreen = ({navigation}: any) => {
     return { action, service, detail, time, type, rawTime: event.time };
   }) || []).sort((a, b) => (b.rawTime ?? 0) - (a.rawTime ?? 0));
 
+  const insets = useSafeAreaInsets();
   // Platform-specific: For web, only Recent Activity is scrollable and refreshable. For native, whole screen is scrollable and refreshable.
   if (Platform.OS === 'web') {
     // Use a single ScrollView for the whole screen, but only Recent Activity is flex: 1 and scrollable visually
     return (
-      <View style={[styles.parentContainer, { flex: 1 }]}> 
+      <View style={[styles.parentContainer, { flex: 1, paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
         <AppHeader navigation={navigation} screen="cluster" />
         <View style={{ flex: 1 }}>
           <ScrollView
@@ -199,8 +201,8 @@ const ClusterScreen = ({navigation}: any) => {
     // Native: top-level ScrollView for RefreshControl, only Recent Activity visually scrollable
     return (
       <ScrollView
-        style={[styles.parentContainer, { flex: 1 }]} 
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={[styles.parentContainer, { flex: 1, paddingTop: insets.top }]}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom }}
         refreshControl={
           <NativeRefreshControl
             refreshing={refreshing}

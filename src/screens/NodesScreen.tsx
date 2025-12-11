@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, ActivityIndicator, Pressable, Alert } from 'react-native';
 import { RefreshControl as NativeRefreshControl } from 'react-native';
 import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
-import { Server, Star, AlertCircle, CheckCircle2, LogOut, Play, Pause, ArrowDownCircle, Trash2 } from 'lucide-react-native';
+import { Cpu, Star, AlertCircle, CheckCircle2, LogOut, Play, Pause, ArrowDownCircle, Trash2 } from 'lucide-react-native';
 import Footer from "../components/Footer";
 import AppHeader from "../components/AppHeader";
 import { useAuth } from "src/store/useAuth";
@@ -11,6 +11,7 @@ import { useLoading } from "src/store/useLoading";
 import { showErrorToast, showSuccessToast } from 'src/utils/toast';
 import { getSwarmNodes, leaveSwarm, updateNodeAvailability } from 'src/features/swarm/swarmAPI';
 import GetSwarmPayload from 'src/features/swarm/GetSwarmPayload';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const NodesScreen = ({navigation}: any) => {
   const { theme } = useAuth();
@@ -178,9 +179,9 @@ const NodesScreen = ({navigation}: any) => {
             {isLeader ? (
               <Star size={18} color="#f59e0b" style={{ marginRight: 8 }} fill="#f59e0b" />
             ) : isManager ? (
-              <Server size={18} color={styles.primary.color} style={{ marginRight: 8 }} />
+              <Cpu size={18} color={styles.primary.color} style={{ marginRight: 8 }} />
             ) : (
-              <Server size={18} color={styles.secondary.color} style={{ marginRight: 8 }} />
+              <Cpu size={18} color={styles.secondary.color} style={{ marginRight: 8 }} />
             )}
             <View style={{ flex: 1 }}>
               <Text style={styles.nodeHostname}>{hostname}</Text>
@@ -277,8 +278,10 @@ const NodesScreen = ({navigation}: any) => {
     );
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { flex: 1, paddingTop: insets.top }]} contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom }}>
       <AppHeader navigation={navigation} screen="nodes" />
       <ScrollView
         style={styles.scrollView}
@@ -293,7 +296,7 @@ const NodesScreen = ({navigation}: any) => {
           </View>
         ) : nodes.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Server size={48} color={theme === 'light' ? '#9ca3af' : '#6b7280'} />
+            <Cpu size={48} color={theme === 'light' ? '#9ca3af' : '#6b7280'} />
             <Text style={styles.emptyText}>No nodes found</Text>
           </View>
         ) : (
@@ -324,9 +327,18 @@ const NodesScreen = ({navigation}: any) => {
               </View>
             </View>
 
-            {nodes.map((node, index) => (
-              <NodeCard key={node.ID || index} node={node} />
-            ))}
+            {nodes.slice() // avoid mutating original array
+              .sort((a, b) => {
+                const aLeader = a.ManagerStatus?.Leader ? 1 : 0;
+                const bLeader = b.ManagerStatus?.Leader ? 1 : 0;
+
+                // Put leader first → sort descending
+                return bLeader - aLeader;
+              })
+              .map((node, index) => (
+                <NodeCard key={node.ID || index} node={node} />
+              ))
+            }
           </>
         )}
       </ScrollView>

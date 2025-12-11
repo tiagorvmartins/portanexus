@@ -13,6 +13,7 @@ import Footer from "../components/Footer";
 import AppHeader from "src/components/AppHeader";
 import Containers from "src/features/container/Containers";
 import ContainerHeader from "src/components/ContainerHeader";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ContainersScreen = ({navigation}: any) => {
   const { addLoadingComponent, removeLoadingComponent } = useLoading();
@@ -126,8 +127,10 @@ const ContainersScreen = ({navigation}: any) => {
     }, []) // Empty deps - use refs for everything
   );
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container} >
+      <View style={[styles.container, {paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
        <AppHeader navigation={navigation} screen="containers" />
        <ContainerHeader running={countRunning} exited={count-countRunning} activeLabel="Containers Running" inactiveLabel="Containers Inactive" />
        <View style={styles.inputContainer}>

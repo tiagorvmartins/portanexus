@@ -1,4 +1,4 @@
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, Pressable, StyleSheet, TextInput, View, ViewStyle, Text } from "react-native";
 import { useCallback, useEffect, useState } from "react";
 import { showErrorToast } from "src/utils/toast";
@@ -100,8 +100,10 @@ const StacksScreen = ({navigation}: any) => {
     }, [isLoggedIn])
   );
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+      <View style={[styles.container, {paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
        <AppHeader navigation={navigation} screen="stacks" />
        <ContainerHeader running={stacksRunning} exited={stacksStopped} activeLabel="Stacks Running" inactiveLabel="Stacks Inactive" />
        <View style={styles.inputContainer}>

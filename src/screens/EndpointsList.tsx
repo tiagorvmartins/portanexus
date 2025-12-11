@@ -10,6 +10,7 @@ import { useLoading } from 'src/store/useLoading';
 import { useAuth } from 'src/store/useAuth';
 import { haveLoginDetail as haveLoginDetailThunk } from '../features/auth/authSlice'
 import { getSelectedEndpoint as getSelectedEndpointThunk } from 'src/features/endpoints/endpointsSlice';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
@@ -100,12 +101,14 @@ const EndpointLists = ({navigation}: any) => {
                 showErrorToast("Endpoint is down. Please select another endpoint.", theme);
                 return;
               }
+              setRefreshing(true);
               const endpointIdNum = Number(item.Id);
               await setSelectedEndpoint(endpointIdNum);
               if(item.IsSwarm && item.SwarmId)
                   await setSelectedSwarmId(item.SwarmId)
               else
                   await setSelectedSwarmId('0') // Use string '0' to match the type
+              setRefreshing(false);
           }}
         >
           <View style={styles.cardHeader}>
@@ -133,9 +136,13 @@ const EndpointLists = ({navigation}: any) => {
     );
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <>
-      <ScrollView  style={styles.container} refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
+      <ScrollView  style={[styles.container, { paddingTop: insets.top }]}
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+        refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
         <AppHeader navigation={navigation} />
         <View style={styles.endpointsView}>
           {

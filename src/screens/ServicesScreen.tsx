@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, ActivityIndicator, Pressable, TextInput, Modal, Alert } from 'react-native';
 import { RefreshControl as NativeRefreshControl } from 'react-native';
 import { RefreshControl as WebRefreshControl } from 'react-native-web-refresh-control';
-import { Box, CheckCircle2, AlertCircle, Server, Layers, Clock, ArrowUpDown, X, RefreshCw } from 'lucide-react-native';
+import { SquareChartGantt, CheckCircle2, AlertCircle, Server, Layers, Clock, ArrowUpDown, X, RefreshCw } from 'lucide-react-native';
 import AppHeader from 'src/components/AppHeader';
 import Footer from 'src/components/Footer';
 import { useAuth } from 'src/store/useAuth';
@@ -12,6 +12,7 @@ import { getSwarmServices, updateServiceScale, recreateService, getSwarmTasks } 
 import GetSwarmPayload from 'src/features/swarm/GetSwarmPayload';
 import { showErrorToast, showSuccessToast } from 'src/utils/toast';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const RefreshControl = Platform.OS === 'web' ? WebRefreshControl : NativeRefreshControl;
 
@@ -264,7 +265,7 @@ const ServicesScreen = ({navigation}: any) => {
       <View style={styles.serviceCard}>
         <View style={styles.serviceHeader}>
           <View style={styles.serviceHeaderLeft}>
-            <Box size={18} color={styles.primary.color} style={{ marginRight: 8 }} />
+            <SquareChartGantt size={18} color={styles.primary.color} style={{ marginRight: 8 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.serviceName}>{serviceName}</Text>
               <Text style={styles.serviceId}>ID: {serviceId.substring(0, 12)}</Text>
@@ -342,8 +343,10 @@ const ServicesScreen = ({navigation}: any) => {
     );
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
       <AppHeader navigation={navigation} screen="services" />
       <ScrollView
         style={styles.scrollView}
@@ -358,7 +361,7 @@ const ServicesScreen = ({navigation}: any) => {
           </View>
         ) : services.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Box size={48} color={theme === 'light' ? '#9ca3af' : '#6b7280'} />
+            <SquareChartGantt size={48} color={theme === 'light' ? '#9ca3af' : '#6b7280'} />
             <Text style={styles.emptyText}>No services found</Text>
           </View>
         ) : (
