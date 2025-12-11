@@ -1,4 +1,4 @@
-# PortaNexus ![Android APK Workflow](https://github.com/tiagorvmartins/portanexus/actions/workflows/android.release.apk.yml/badge.svg) [![Download APK v0.2.0](https://img.shields.io/badge/download-v0.2.0-green)](https://github.com/tiagorvmartins/portanexus/releases/download/v0.2.0/portanexus-v0.2.0.apk)
+# PortaNexus ![Android APK Workflow](https://github.com/tiagorvmartins/portanexus/actions/workflows/android.release.apk.yml/badge.svg) [![Download APK v0.3.0](https://img.shields.io/badge/download-v0.3.0-green)](https://github.com/tiagorvmartins/portanexus/releases/download/v0.3.0/portanexus-v0.3.0.apk)
 
 <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/demo/demo.gif" width="35%" height="35%"/>
 
@@ -34,7 +34,7 @@ For convenience there is also a Docker image being maintained on docker hub [tia
 ```
 services:
   portanexus:
-    image: tiagorvmartins/portanexus-web:v0.2.0
+    image: tiagorvmartins/portanexus-web:v0.3.0
     ports:
       - "8080:80  # You can change the binded port on host to your needs if needed
 ```
