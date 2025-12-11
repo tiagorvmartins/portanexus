@@ -9,7 +9,6 @@ import { useAuth } from "src/store/useAuth";
 import { useEndpoints } from "src/store/useEndpoints";
 import ContainerEntity from "src/types/ContainerEntity";
 import { useContainer } from "src/store/useContainer";
-import Loading from "src/components/Loading";
 import { getSwarmServices, getSwarmTasks } from "src/features/swarm/swarmAPI";
 import GetSwarmPayload from "src/features/swarm/GetSwarmPayload";
 
@@ -20,110 +19,32 @@ const Stacks = ({filterByStackName, navigation, refreshing, onRefresh }: any) =>
   const { theme, stackOrderBy, getStackOrderBy } = useAuth()
   const styles = createStyles(theme);
 
-  const { stacks: fetchedStacks, fetchStacks, fetchStack } = useStacks()
-  const { selectedEndpointId, selectedSwarmId, endpoints, setSelectedSwarmId } = useEndpoints()
+  const { stacks: fetchedStacks, fetchStack } = useStacks()
+  const { selectedEndpointId, selectedSwarmId, endpoints } = useEndpoints()
   const { fetchContainers, containers } = useContainer();
   const [ isLoading, setIsLoading ] = useState(false)
   
   // For swarm stacks, we store tasks converted to container-like format
   const [swarmTasks, setSwarmTasks] = useState<Record<string, ContainerEntity[]>>({});
   
-  // Track which stacks we've already fetched containers/tasks for to prevent infinite loops
+  // Track which stacks we've already fetched containers/tasks for to prevent duplicate fetches
   const fetchedContainersForStacksRef = useRef<Set<string>>(new Set());
-  const lastFetchedStacksRef = useRef<string>('');
-
-  // Use a ref to track if we're already loading to prevent infinite loops
-  const isLoadingPreferencesRef = useRef(false);
-
-  useEffect(() => {
-      const loadPreferences = async () => {
-        // Prevent multiple simultaneous calls
-        if (isLoadingPreferencesRef.current) {
-          return;
-        }
-        
-        if (!selectedEndpointId || selectedEndpointId === -1) {
-          return;
-        }
-        
-        try {
-          isLoadingPreferencesRef.current = true;
-          
-          // Check if the endpoint is a swarm endpoint
-          const selectedEndpoint = endpoints.find(e => Number(e.Id) === selectedEndpointId);
-          const isSwarm = selectedEndpoint?.IsSwarm ?? false;
-          
-          // Fix NaN selectedSwarmId - if it's NaN, use endpoint's SwarmId or '0'
-          let currentSwarmId = selectedSwarmId;
-          if (typeof selectedSwarmId === 'number' && isNaN(selectedSwarmId)) {
-            currentSwarmId = selectedEndpoint?.SwarmId || '0';
-            // Update the state if we have a valid SwarmId
-            if (selectedEndpoint?.SwarmId) {
-              await setSelectedSwarmId(selectedEndpoint.SwarmId);
-            }
-          }
-          
-          // Use swarmId if endpoint is a swarm
-          // Priority: currentSwarmId > endpoint.SwarmId > '0'
-          // SwarmId is a Docker Swarm cluster ID (string hash), not a number
-          let swarmIdToUse: string | number = '0';
-          if (isSwarm) {
-            if (currentSwarmId && currentSwarmId !== '0' && currentSwarmId !== 0 && String(currentSwarmId) !== 'NaN') {
-              // currentSwarmId is valid - convert to string if needed
-              swarmIdToUse = typeof currentSwarmId === 'string' ? currentSwarmId : String(currentSwarmId);
-            } else if (selectedEndpoint?.SwarmId) {
-              // endpoint.SwarmId is always a string (Docker Swarm cluster ID)
-              swarmIdToUse = selectedEndpoint.SwarmId;
-            }
-          }
-          
-          await Promise.all([
-            fetchStacks({ endpointId: selectedEndpointId, filters: {}, stackId: 0, swarmId: swarmIdToUse } ),
-            getStackOrderBy()
-          ]);
-        } catch (err) {
-          console.error("[Stacks] Error loading preferences:", err);
-        } finally {
-          isLoadingPreferencesRef.current = false;
-        }
-      };
+  const lastEndpointRef = useRef<number>(-1);
   
-      loadPreferences();
-  }, [selectedEndpointId, selectedSwarmId, endpoints, setSelectedSwarmId, fetchStacks, getStackOrderBy]);
+  // Use a ref to track if we're currently fetching to prevent duplicate fetches
+  const isFetchingRef = useRef(false);
 
-  const [fullStacks, setFullStacks] = useState<StackEntity[]>(fetchedStacks);
-
-  const fetchAll = async () => {
-      setIsLoading(true)
-
-      const promises = fetchedStacks.map(stack => {
-        let filters = {}
-        if (selectedSwarmId) {
-            filters = { label: [`com.docker.stack.namespace=${stack.Name}`] }
-        } else {
-            filters = { label: [`com.docker.compose.project=${stack.Name}`] }
-        }
-        return fetchContainers({ filters, endpointId: selectedEndpointId })
-        }
-      );
-
-      await Promise.all(promises);
-      setIsLoading(false)
-  };
-
-      // Clear cache when endpoint/swarm changes
-      useEffect(() => {
-        if (selectedEndpointId === -1) {
-          return;
-        }
-        // Only clear if endpoint or swarm actually changed (not on every render)
-        const currentKey = `${selectedEndpointId}-${selectedSwarmId}`;
-        if (lastFetchedStacksRef.current && !lastFetchedStacksRef.current.startsWith(currentKey)) {
-          fetchedContainersForStacksRef.current.clear();
-          lastFetchedStacksRef.current = '';
-          setSwarmTasks({}); // Clear swarm tasks when switching endpoints
-        }
-      }, [selectedEndpointId, selectedSwarmId]);
+  // Load preferences on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        await getStackOrderBy();
+      } catch (err) {
+        console.error("[Stacks] Error loading preferences:", err);
+      }
+    };
+    loadPreferences();
+  }, [getStackOrderBy]);
 
   // Memoize the selected endpoint to prevent unnecessary re-renders
   const selectedEndpoint = useMemo(() => {
@@ -132,12 +53,29 @@ const Stacks = ({filterByStackName, navigation, refreshing, onRefresh }: any) =>
   
   const isSwarm = selectedEndpoint?.IsSwarm ?? false;
 
+  // Clear local state when endpoint changes
+  useEffect(() => {
+    if (selectedEndpointId === -1) {
+      return;
+    }
+    
+    // Check if endpoint actually changed
+    if (lastEndpointRef.current !== selectedEndpointId) {
+      lastEndpointRef.current = selectedEndpointId;
+      
+      // Clear all local state when endpoint changes
+      fetchedContainersForStacksRef.current.clear();
+      setSwarmTasks({});
+      isFetchingRef.current = false;
+    }
+  }, [selectedEndpointId]);
+
   // Clear cache when refreshing
   useEffect(() => {
     if (refreshing) {
       fetchedContainersForStacksRef.current.clear();
-      lastFetchedStacksRef.current = '';
-      // Don't clear swarmTasks here - let it be refreshed by the fetch below
+      setSwarmTasks({});
+      isFetchingRef.current = false;
     }
   }, [refreshing]);
 
@@ -147,186 +85,178 @@ const Stacks = ({filterByStackName, navigation, refreshing, onRefresh }: any) =>
     fetchContainersRef.current = fetchContainers;
   }, [fetchContainers]);
 
-  // Use a ref to track if we're currently fetching to prevent duplicate fetches
-  const isFetchingRef = useRef(false);
-
+  // Fetch containers/tasks for stacks when stacks are available
   useEffect(() => {
-      // Only run if we have stacks and haven't already processed this exact set
-      if (fetchedStacks.length === 0 || selectedEndpointId === -1 || isFetchingRef.current) {
-        return;
+    // Only run if we have stacks and haven't already processed this exact set
+    if (fetchedStacks.length === 0 || selectedEndpointId === -1 || isFetchingRef.current) {
+      return;
+    }
+    
+    // Create a stable key from stack IDs (sorted for consistency)
+    const stackIds = fetchedStacks.map(s => s.Id).sort().join(',');
+    const stacksKey = `${selectedEndpointId}-${selectedSwarmId}-${stackIds}`;
+    
+    // Only fetch if we haven't fetched for this exact combination of stacks/endpoint
+    // OR if we're currently refreshing (to force re-fetch)
+    if (!fetchedContainersForStacksRef.current.has(stacksKey) || refreshing) {
+      // Mark as fetching immediately to prevent duplicate fetches
+      isFetchingRef.current = true;
+      if (!refreshing) {
+        fetchedContainersForStacksRef.current.add(stacksKey);
       }
       
-      // Create a stable key from stack IDs (sorted for consistency)
-      const stackIds = fetchedStacks.map(s => s.Id).sort().join(',');
-      const stacksKey = `${selectedEndpointId}-${selectedSwarmId}-${stackIds}`;
+      // Check if selectedSwarmId is valid (not NaN, not '0', not 0)
+      const isValidSwarmId = selectedSwarmId && 
+                             selectedSwarmId !== '0' && 
+                             selectedSwarmId !== 0 && 
+                             String(selectedSwarmId) !== 'NaN' &&
+                             !(typeof selectedSwarmId === 'number' && isNaN(selectedSwarmId));
       
-      // Only fetch if we haven't fetched for this exact combination of stacks/endpoint
-      // OR if we're currently refreshing (to force re-fetch)
-      if (!fetchedContainersForStacksRef.current.has(stacksKey) || refreshing) {
-        // Mark as fetching immediately to prevent duplicate fetches
-        isFetchingRef.current = true;
-        if (!refreshing) {
-          fetchedContainersForStacksRef.current.add(stacksKey);
-          lastFetchedStacksRef.current = stacksKey;
-        }
+      if (isSwarm && isValidSwarmId) {
+        // For swarm: fetch services, then tasks for services in each stack
+        const swarmIdString = typeof selectedSwarmId === 'string' ? selectedSwarmId : String(selectedSwarmId);
+        const swarmPayload: GetSwarmPayload = {
+          endpointId: selectedEndpointId,
+          swarmId: swarmIdString,
+        };
+        
+        // Fetch all services and tasks once
+        Promise.all([
+          getSwarmServices(swarmPayload),
+          getSwarmTasks(swarmPayload),
+        ]).then(([servicesResponse, tasksResponse]) => {
+          const services = servicesResponse.results || [];
+          const allTasks = tasksResponse.results || [];
           
-          // Check if selectedSwarmId is valid (not NaN, not '0', not 0)
-          const isValidSwarmId = selectedSwarmId && 
-                                 selectedSwarmId !== '0' && 
-                                 selectedSwarmId !== 0 && 
-                                 String(selectedSwarmId) !== 'NaN' &&
-                                 !(typeof selectedSwarmId === 'number' && isNaN(selectedSwarmId));
+          // Group tasks by stack namespace
+          const tasksByStack: Record<string, ContainerEntity[]> = {};
           
-          if (isSwarm && isValidSwarmId) {
-            // For swarm: fetch services, then tasks for services in each stack
-            const swarmIdString = typeof selectedSwarmId === 'string' ? selectedSwarmId : String(selectedSwarmId);
-            const swarmPayload: GetSwarmPayload = {
-              endpointId: selectedEndpointId,
-              swarmId: swarmIdString,
-            };
-            
-            // Fetch all services and tasks once
-            Promise.all([
-              getSwarmServices(swarmPayload),
-              getSwarmTasks(swarmPayload),
-            ]).then(([servicesResponse, tasksResponse]) => {
-              const services = servicesResponse.results || [];
-              const allTasks = tasksResponse.results || [];
-              
-              // Group tasks by stack namespace
-              const tasksByStack: Record<string, ContainerEntity[]> = {};
-              
-              fetchedStacks.forEach(stack => {
-                // Find services that belong to this stack
-                const stackServices = services.filter((svc: any) => {
-                  const namespace = svc.Spec?.Labels?.['com.docker.stack.namespace'];
-                  return namespace === stack.Name;
-                });
-                
-                // Get all tasks for services in this stack
-                const stackTasks: ContainerEntity[] = [];
-                stackServices.forEach((svc: any) => {
-                  const serviceName = svc.Spec?.Name;
-                  const serviceId = svc.ID;
-                  if (serviceName) {
-                    const serviceTasks = allTasks.filter((task: any) => {
-                      // Match by full service ID or short ID
-                      const taskServiceId = task.ServiceID;
-                      return taskServiceId === serviceId || 
-                             (taskServiceId && serviceId && taskServiceId.startsWith(serviceId.substring(0, 12))) ||
-                             (serviceId && taskServiceId && serviceId.startsWith(taskServiceId.substring(0, 12)));
-                    });
-                    // Convert tasks to container-like format
-                    serviceTasks.forEach((task: any) => {
-                      stackTasks.push({
-                        Id: task.ID?.substring(0, 12) || task.ID || 0, // Use short ID
-                        Names: [task.Name || task.ID?.substring(0, 12) || ''],
-                        State: task.Status?.State || 'unknown',
-                        Status: task.Status?.State || 'unknown',
-                        Created: task.CreatedAt || '',
-                      } as ContainerEntity);
-                    });
-                  }
-                });
-                
-                tasksByStack[stack.Name] = stackTasks;
-              });
-              // Force a new object reference to ensure React detects the change
-              setSwarmTasks(prev => {
-                // Only update if something actually changed to prevent unnecessary re-renders
-                const prevKeys = Object.keys(prev).sort().join(',');
-                const newKeys = Object.keys(tasksByStack).sort().join(',');
-                if (prevKeys !== newKeys) {
-                  return { ...tasksByStack };
-                }
-                // Check if contents changed
-                for (const key of Object.keys(tasksByStack)) {
-                  const prevTasks = prev[key] || [];
-                  const newTasks = tasksByStack[key] || [];
-                  if (prevTasks.length !== newTasks.length) {
-                    return { ...tasksByStack };
-                  }
-                }
-                return prev; // No change, return previous to prevent re-render
-              });
-              
-              // Update cache after successful fetch
-              const currentStackIds = fetchedStacks.map(s => s.Id).sort().join(',');
-              const currentStacksKey = `${selectedEndpointId}-${selectedSwarmId}-${currentStackIds}`;
-              fetchedContainersForStacksRef.current.add(currentStacksKey);
-              lastFetchedStacksRef.current = currentStacksKey;
-              isFetchingRef.current = false;
-            }).catch(err => {
-              console.error("[Stacks] Error fetching swarm services/tasks for stacks:", err);
-              // Remove from cache on error so it can be retried
-              fetchedContainersForStacksRef.current.delete(stacksKey);
-              isFetchingRef.current = false;
-            });
-          } else {
-            // For non-swarm: fetch containers
-            const promises = fetchedStacks.map(stack => {
-              const filters = { label: [`com.docker.compose.project=${stack.Name}`] };
-              return fetchContainersRef.current({ filters, endpointId: selectedEndpointId });
+          fetchedStacks.forEach(stack => {
+            // Find services that belong to this stack
+            const stackServices = services.filter((svc: any) => {
+              const namespace = svc.Spec?.Labels?.['com.docker.stack.namespace'];
+              return namespace === stack.Name;
             });
             
-            // Fire and forget - don't block UI
-            Promise.all(promises).then(() => {
-              // Update cache after successful fetch (for non-swarm)
-              const currentStackIds = fetchedStacks.map(s => s.Id).sort().join(',');
-              const currentStacksKey = `${selectedEndpointId}-${selectedSwarmId}-${currentStackIds}`;
-              fetchedContainersForStacksRef.current.add(currentStacksKey);
-              lastFetchedStacksRef.current = currentStacksKey;
-              isFetchingRef.current = false;
-            }).catch(err => {
-              console.error("Error fetching containers for stacks:", err);
-              // Remove from cache on error so it can be retried
-              fetchedContainersForStacksRef.current.delete(stacksKey);
-              isFetchingRef.current = false;
+            // Get all tasks for services in this stack
+            const stackTasks: ContainerEntity[] = [];
+            stackServices.forEach((svc: any) => {
+              const serviceName = svc.Spec?.Name;
+              const serviceId = svc.ID;
+              if (serviceName) {
+                const serviceTasks = allTasks.filter((task: any) => {
+                  // Match by full service ID or short ID
+                  const taskServiceId = task.ServiceID;
+                  return taskServiceId === serviceId || 
+                         (taskServiceId && serviceId && taskServiceId.startsWith(serviceId.substring(0, 12))) ||
+                         (serviceId && taskServiceId && serviceId.startsWith(taskServiceId.substring(0, 12)));
+                });
+                // Convert tasks to container-like format
+                serviceTasks.forEach((task: any) => {
+                  stackTasks.push({
+                    Id: task.ID?.substring(0, 12) || task.ID || 0, // Use short ID
+                    Names: [task.Name || task.ID?.substring(0, 12) || ''],
+                    State: task.Status?.State || 'unknown',
+                    Status: task.Status?.State || 'unknown',
+                    Created: task.CreatedAt || '',
+                  } as ContainerEntity);
+                });
+              }
             });
-          }
+            
+            tasksByStack[stack.Name] = stackTasks;
+          });
+          
+          // Update swarm tasks
+          setSwarmTasks(tasksByStack);
+          
+          // Update cache after successful fetch
+          const currentStackIds = fetchedStacks.map(s => s.Id).sort().join(',');
+          const currentStacksKey = `${selectedEndpointId}-${selectedSwarmId}-${currentStackIds}`;
+          fetchedContainersForStacksRef.current.add(currentStacksKey);
+          isFetchingRef.current = false;
+        }).catch(err => {
+          console.error("[Stacks] Error fetching swarm services/tasks for stacks:", err);
+          // Remove from cache on error so it can be retried
+          fetchedContainersForStacksRef.current.delete(stacksKey);
+          isFetchingRef.current = false;
+        });
+      } else {
+        // For non-swarm: fetch containers
+        const promises = fetchedStacks.map(stack => {
+          const filters = { label: [`com.docker.compose.project=${stack.Name}`] };
+          return fetchContainersRef.current({ filters, endpointId: selectedEndpointId });
+        });
+        
+        // Fire and forget - don't block UI
+        Promise.all(promises).then(() => {
+          // Update cache after successful fetch (for non-swarm)
+          const currentStackIds = fetchedStacks.map(s => s.Id).sort().join(',');
+          const currentStacksKey = `${selectedEndpointId}-${selectedSwarmId}-${currentStackIds}`;
+          fetchedContainersForStacksRef.current.add(currentStacksKey);
+          isFetchingRef.current = false;
+        }).catch(err => {
+          console.error("Error fetching containers for stacks:", err);
+          // Remove from cache on error so it can be retried
+          fetchedContainersForStacksRef.current.delete(stacksKey);
+          isFetchingRef.current = false;
+        });
       }
+    } else {
+      isFetchingRef.current = false;
+    }
   }, [fetchedStacks, selectedEndpointId, selectedSwarmId, isSwarm, refreshing]);
 
+  // Sync fullStacks with fetchedStacks from Redux
+  const [fullStacks, setFullStacks] = useState<StackEntity[]>(fetchedStacks);
 
   useEffect(() => {
-    if (!filterByStackName) {
-      // Only update if stacks actually changed (prevent unnecessary re-renders)
-      setFullStacks(prev => {
-        const prevIds = prev.map(s => s.Id).sort().join(',');
-        const newIds = fetchedStacks.map(s => s.Id).sort().join(',');
-        if (prevIds !== newIds) {
-          return fetchedStacks;
-        }
-        return prev;
-      });
+    // Only update if stacks actually changed (prevent unnecessary re-renders)
+    setFullStacks(prev => {
+      const prevIds = prev.map(s => s.Id).sort().join(',');
+      const newIds = fetchedStacks.map(s => s.Id).sort().join(',');
+      if (prevIds !== newIds) {
+        return fetchedStacks;
+      }
+      return prev;
+    });
+  }, [fetchedStacks]);
+
+  // Apply filtering
+  useEffect(() => {
+    if (filterByStackName) {
+      const filteredContainers = fetchedStacks.filter((p: StackEntity) => 
+        p.Name.toLowerCase().includes(filterByStackName.toLowerCase())
+      );
+      setFullStacks(filteredContainers);
     } else {
-      const filteredContainers = fetchedStacks.filter((p: StackEntity) => p.Name.toLowerCase().includes(filterByStackName.toLowerCase()))
-      setFullStacks(filteredContainers)
+      // Reset to all stacks when filter is cleared
+      setFullStacks(fetchedStacks);
     }
   }, [filterByStackName, fetchedStacks]);
 
-
+  // Apply sorting
   useEffect(() => {
-      setFullStacks(prev => {
-        let sortedData = [...prev];
-        switch (stackOrderBy) {
-          case "createdDateAsc":
-            sortedData.sort((a: StackEntity, b: StackEntity) => a.CreationDate - b.CreationDate);
-            break;
-          case "createdDateDesc":
-            sortedData.sort((a: StackEntity, b: StackEntity) => b.CreationDate - a.CreationDate);
-            break;
-          case "nameAsc":
-            sortedData.sort((a, b) => a.Name.localeCompare(b.Name));
-            break;
-          case "nameDesc":
-            sortedData.sort((a, b) => b.Name.localeCompare(a.Name));
-            break;
-          default:
-            return prev; // No change needed
-        }
-        return sortedData;
-      });
+    setFullStacks(prev => {
+      let sortedData = [...prev];
+      switch (stackOrderBy) {
+        case "createdDateAsc":
+          sortedData.sort((a: StackEntity, b: StackEntity) => a.CreationDate - b.CreationDate);
+          break;
+        case "createdDateDesc":
+          sortedData.sort((a: StackEntity, b: StackEntity) => b.CreationDate - a.CreationDate);
+          break;
+        case "nameAsc":
+          sortedData.sort((a, b) => a.Name.localeCompare(b.Name));
+          break;
+        case "nameDesc":
+          sortedData.sort((a, b) => b.Name.localeCompare(a.Name));
+          break;
+        default:
+          return prev; // No change needed
+      }
+      return sortedData;
+    });
   }, [stackOrderBy]);
 
   const containersByStack = useMemo(() => {
@@ -336,13 +266,11 @@ const Stacks = ({filterByStackName, navigation, refreshing, onRefresh }: any) =>
     }
     
     // Check if selectedSwarmId is valid (not NaN, not '0', not 0)
-    // SwarmId is a Docker Swarm cluster ID (string hash), not a number, so don't check isNaN(Number(...))
     const isValidSwarmId = selectedSwarmId && 
                            selectedSwarmId !== '0' && 
                            selectedSwarmId !== 0 && 
                            String(selectedSwarmId) !== 'NaN' &&
                            !(typeof selectedSwarmId === 'number' && isNaN(selectedSwarmId));
-    
     
     // For swarm stacks, use tasks
     if (isSwarm && isValidSwarmId) {
@@ -484,7 +412,7 @@ const Stacks = ({filterByStackName, navigation, refreshing, onRefresh }: any) =>
         prevStacks.map(s => (s.Id === stackFetchedResult.Id ? stackFetchedResult : s))
       );
     }
-  }, [selectedEndpointId, endpoints, fetchContainersForStack, fetchStack]);
+  }, [selectedEndpointId, selectedSwarmId, endpoints, fetchContainersForStack, fetchStack]);
 
   return (
       <>

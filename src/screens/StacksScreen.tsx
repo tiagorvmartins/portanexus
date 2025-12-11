@@ -1,6 +1,6 @@
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, Pressable, StyleSheet, TextInput, View, ViewStyle, Text } from "react-native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { showErrorToast } from "src/utils/toast";
 import { useFocusEffect } from '@react-navigation/native';
 import { useLoading } from "src/store/useLoading";
@@ -26,12 +26,34 @@ const StacksScreen = ({navigation}: any) => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [filterByStackName, setFilterByStackName] = useState<string>("");
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Track if we've refreshed on focus to prevent duplicate fetches
+  const hasRefreshedOnFocusRef = useRef(false);
+  const lastEndpointRef = useRef(selectedEndpointId);
+  
+  // Store latest functions in refs to avoid recreating callbacks
+  const addLoadingRef = useRef(addLoadingComponent);
+  const removeLoadingRef = useRef(removeLoadingComponent);
+  const fetchEndpointsRef = useRef(fetchEndpoints);
+  const fetchStacksRef = useRef(fetchStacks);
+  const clearStacksStateRef = useRef(clearStacksState);
+  
+  // Update refs on each render
+  addLoadingRef.current = addLoadingComponent;
+  removeLoadingRef.current = removeLoadingComponent;
+  fetchEndpointsRef.current = fetchEndpoints;
+  fetchStacksRef.current = fetchStacks;
+  clearStacksStateRef.current = clearStacksState;
 
-  const fetchStacksFn = async () => {
+  const fetchStacksFn = useCallback(async () => {
+    if (selectedEndpointId === -1) {
+      return;
+    }
+    
     // Check if the endpoint is a swarm endpoint
     const selectedEndpoint = endpoints.find(e => Number(e.Id) === selectedEndpointId);
     const isSwarm = selectedEndpoint?.IsSwarm ?? false;
+    
     // Use swarmId if endpoint is a swarm
     // Priority: selectedSwarmId > endpoint.SwarmId > 0
     // SwarmId is a Docker Swarm cluster ID (string hash), not a number
@@ -45,46 +67,63 @@ const StacksScreen = ({navigation}: any) => {
         swarmIdToUse = selectedEndpoint.SwarmId;
       }
     }
+    
     try {
-      await fetchStacks({ endpointId: selectedEndpointId, filters: {}, swarmId: swarmIdToUse });
+      await fetchStacksRef.current({ endpointId: selectedEndpointId, filters: {}, swarmId: swarmIdToUse });
     } catch {
       showErrorToast("There was an error fetching stacks", theme)
     }
-  }
+  }, [selectedEndpointId, selectedSwarmId, endpoints, theme]);
 
-  const onRefresh = async () => {
-    addLoadingComponent();
+  const performRefresh = useCallback(async () => {
+    if (selectedEndpointId === -1) {
+      return;
+    }
+    
+    addLoadingRef.current();
     setRefreshing(true);
+    
     try {
       if(isLoggedIn){
         await Promise.all([
-          fetchEndpoints(),
+          fetchEndpointsRef.current(),
           fetchStacksFn(),
         ]);
       }
     } finally {
       setRefreshing(false);
-      removeLoadingComponent();
-      setIsInitialLoad(false);
+      removeLoadingRef.current();
     }
-  };
+  }, [selectedEndpointId, isLoggedIn, fetchStacksFn]);
 
+  const onRefresh = useCallback(() => {
+    performRefresh();
+  }, [performRefresh]);
+
+  // Handle endpoint/swarm changes - clear and refetch
   useEffect(() => {
     if (selectedEndpointId === -1) {
       return;
     }
     
-    // Clear stacks when endpoint changes
-    clearStacksState();
-    setIsInitialLoad(true);
-    
-    // Block loading until stacks are fetched
-    addLoadingComponent();
-    fetchStacksFn().finally(() => {
-      removeLoadingComponent();
-      setIsInitialLoad(false);
-    });
-  }, [selectedEndpointId, selectedSwarmId]);
+    // Check if endpoint actually changed
+    if (lastEndpointRef.current !== selectedEndpointId) {
+      lastEndpointRef.current = selectedEndpointId;
+      
+      // Reset focus ref when endpoint changes
+      hasRefreshedOnFocusRef.current = false;
+      
+      // Clear stacks immediately when endpoint changes to show empty state while loading
+      clearStacksStateRef.current();
+      
+      // Block loading until stacks are fetched
+      addLoadingRef.current();
+      
+      fetchStacksFn().finally(() => {
+        removeLoadingRef.current();
+      });
+    }
+  }, [selectedEndpointId, selectedSwarmId, fetchStacksFn]);
 
   useEffect(() => {
     if(!isLoggedIn) {
@@ -92,18 +131,36 @@ const StacksScreen = ({navigation}: any) => {
     }
   }, [isLoggedIn, navigation]);
 
+  // Only refresh on focus if we haven't already, and not immediately after endpoint change
+  const performRefreshRef = useRef(performRefresh);
+  performRefreshRef.current = performRefresh;
+
   useFocusEffect(
     useCallback(() => {
-      if (isLoggedIn) {
-        onRefresh();
+      if (!isLoggedIn || selectedEndpointId === -1) {
+        return;
       }
-    }, [isLoggedIn])
+      
+      // Only refresh if we haven't already, and endpoint hasn't changed
+      if (!hasRefreshedOnFocusRef.current && lastEndpointRef.current === selectedEndpointId) {
+        hasRefreshedOnFocusRef.current = true;
+        performRefreshRef.current();
+      }
+      
+      // Reset ref when screen loses focus (cleanup)
+      return () => {
+        // Don't reset if endpoint changed (let the endpoint effect handle it)
+        if (lastEndpointRef.current === selectedEndpointId) {
+          hasRefreshedOnFocusRef.current = false;
+        }
+      };
+    }, [isLoggedIn, selectedEndpointId])
   );
 
   const insets = useSafeAreaInsets();
 
   return (
-      <View style={[styles.container, {paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
+      <View style={[styles.container, {paddingTop: insets.top, paddingBottom: insets.bottom }]}>
        <AppHeader navigation={navigation} screen="stacks" />
        <ContainerHeader running={stacksRunning} exited={stacksStopped} activeLabel="Stacks Running" inactiveLabel="Stacks Inactive" />
        <View style={styles.inputContainer}>

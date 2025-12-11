@@ -10,13 +10,15 @@ interface StacksState {
   count: number;
   stacksRunning: number;
   stacksStopped: number;
+  currentEndpointId: number; // Track which endpoint these stacks belong to
 }
 
 const initialState: StacksState = {
   stacks: [],
   count: 0,
   stacksRunning: 0,
-  stacksStopped: 0
+  stacksStopped: 0,
+  currentEndpointId: -1,
 };
 
 export const fetchSingleStack = createAsyncThunk<StackEntity, number>("stacks/find", 
@@ -77,12 +79,23 @@ export const stackSlice = createSlice({
       state.count = 0;
       state.stacksRunning = 0;
       state.stacksStopped = 0;
+      state.currentEndpointId = -1;
     },
   },
   extraReducers: builder => {
     builder
       .addCase(fetchStacks.fulfilled, (state, action) => {
-        state.stacks = action.payload;
+        const fetchedEndpointId = action.meta.arg.endpointId;
+        
+        // If endpoint changed, replace all stacks instead of merging
+        if (state.currentEndpointId !== fetchedEndpointId) {
+          state.stacks = action.payload;
+          state.currentEndpointId = fetchedEndpointId;
+        } else {
+          // Same endpoint - replace stacks (they should be fresh from API)
+          state.stacks = action.payload;
+        }
+        
         state.count = action.payload.length;
         state.stacksRunning = action.payload.filter(p => p.Status === 1).length
         state.stacksStopped = action.payload.filter(p => p.Status !== 1).length
