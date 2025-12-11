@@ -101,7 +101,7 @@ const ClusterScreen = ({navigation}: any) => {
   if (Platform.OS === 'web') {
     // Use a single ScrollView for the whole screen, but only Recent Activity is flex: 1 and scrollable visually
     return (
-      <View style={[styles.parentContainer, { flex: 1, paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
+      <View style={[styles.parentContainer, { flex: 1, paddingTop: insets.top }]}>
         <AppHeader navigation={navigation} screen="cluster" />
         <View style={{ flex: 1 }}>
           <ScrollView
@@ -114,7 +114,7 @@ const ClusterScreen = ({navigation}: any) => {
               />
             }
           >
-            <View style={styles.container}>
+            <View style={[styles.container, { flex: 1 }]}>
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <View>
@@ -155,7 +155,7 @@ const ClusterScreen = ({navigation}: any) => {
                   );
                 })}
               </View>
-              <View style={[styles.card, { flex: 1, minHeight: 200, maxHeight: 400 }]}>
+              <View style={[styles.card]}>
                 <View style={styles.activityHeader}>
                   <Activity size={16} color="#3b82f6" />
                   <Text style={styles.activityTitle}>Recent Activity</Text>

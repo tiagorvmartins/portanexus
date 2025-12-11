@@ -90,25 +90,55 @@ Light Theme                |  Dark Theme
 
 Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
-| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/drawer_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/drawer_dark.png" width="270" height="600"> |
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/drawer_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/drawer_dark.png" width="270" height="600"> |
 
 ### Endpoints Screen
 
 Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
-| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/endpoints_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/endpoints_dark.png" width="270" height="600"> |
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/endpoints_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/endpoints_dark.png" width="270" height="600"> |
+
+### Cluster Screen (on docker swarm endpoint)
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/cluster_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/cluster_dark.png" width="270" height="600"> |
+
+### Nodes Screen (on docker swarm endpoint)
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/nodes_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/nodes_dark.png" width="270" height="600"> |
+
+### Services Screen (on docker swarm endpoint)
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/services_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/services_dark.png" width="270" height="600"> |
+
+### Service Scaling popup (on docker swarm endpoint)
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/scaling_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/scaling_dark.png" width="270" height="600"> |
+
+### Tasks Screen (on docker swarm endpoint)
+
+Light Theme                |  Dark Theme
+:-------------------------:|:-------------------------:
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/tasks_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/tasks_dark.png" width="270" height="600"> |
 
 ### Containers Screen
 
 Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
-| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/containers_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/containers_dark.png" width="270" height="600"> |
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/containers_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/containers_dark.png" width="270" height="600"> |
 
 ### Stacks Screen
 
 Light Theme                |  Dark Theme
 :-------------------------:|:-------------------------:
-| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/stacks_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/stacks_dark.png" width="270" height="600"> |
+| <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/stacks_light.png" width="270" height="600"> | <img src="https://github.com/tiagorvmartins/portanexus/blob/main/docs/images/v0.3.0/stacks_dark.png" width="270" height="600"> |
 
 ### Container Logs Screen
 
