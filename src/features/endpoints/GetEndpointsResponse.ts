@@ -1,4 +1,4 @@
-import EndpointEntity from "src/endpoints/domain/entities/EndpointEntity";
+import EndpointEntity from "src/types/EndpointEntity";
 
 export default interface GetEndpointsResponse {
   results: EndpointEntity[];

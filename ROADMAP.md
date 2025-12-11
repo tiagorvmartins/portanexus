@@ -14,21 +14,21 @@ More details below.
 #### **Version 0.3.0**
 **Goals:** Expand management capabilities.
 - **Stack Management:**
-  - Add functionalities to create and delete stacks.
+  - Add functionalities to create and delete stacks. :white_check_mark:
   - Enable editing existing stack configurations.
 - **Notifications:**
   - Implement push notifications for container and stack status changes.
 - **Search Functionality:**
-  - Add search functionality for containers and stacks.
+  - Add search functionality for containers and stacks. :white_check_mark:
 
 #### **Version 0.4.0**
 **Goals:** Improve usability and support for other Docker types.
 - **Support for Docker Swarm:** 
-  - Extend support to Docker Swarm instances (type === 2).
+  - Extend support to Docker Swarm instances (type === 2). :white_check_mark:
 - **Multi-language Support:** 
   - Introduce localization to support multiple languages.
 - **Settings Page:**
-  - Allow users to configure preferences (e.g., notification settings, API key management).
+  - Allow users to configure preferences (e.g., notification settings, API key management). :white_check_mark:
 
 #### **Version 0.5.0**
 **Goals:** Enhance analytics and monitoring features.

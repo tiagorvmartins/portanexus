@@ -91,7 +91,7 @@ const LoginScreen = ({ onLoginPress, navigation }: any) => {
                         </View>
                     </View>
                     <View style={styles.footer}>
-                        <Footer />
+                        <Footer navigation={navigation} activeTab="Login"/>
                     </View>
                 </View>
             }

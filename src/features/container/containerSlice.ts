@@ -15,6 +15,7 @@ interface ContainersState {
   containerLogsMap: Record<string, Log[]>;
   count: number;
   countRunning: number;
+  currentEndpointId: number; // Track which endpoint these containers belong to
 }
 
 const initialState: ContainersState = {
@@ -23,6 +24,7 @@ const initialState: ContainersState = {
   containerLogsMap: {},
   count: 0,
   countRunning: 0,
+  currentEndpointId: -1,
 };
 
 export const fetchSingleContainer = createAsyncThunk("container/find", async (payload: GetContainersPayload) => {
@@ -102,31 +104,53 @@ export const containerSlice = createSlice({
     setSelectedContainer: (state, action: PayloadAction<ContainerEntity>) => {
       state.selectedContainer = action.payload;
     },
+    clearContainerState: (state) => {
+      state.containers = [];
+      state.selectedContainer = null;
+      state.containerLogsMap = {};
+      state.count = 0;
+      state.countRunning = 0;
+      state.currentEndpointId = -1;
+    },
   },
   extraReducers: builder => {
     builder
       .addCase(countContainersRunning.fulfilled, (state, action) => {
-        state.countRunning = action.payload.length;
+        const fetchedEndpointId = action.meta.arg.endpointId;
+        // Only update count if it's for the current endpoint
+        if (state.currentEndpointId === fetchedEndpointId || state.currentEndpointId === -1) {
+          state.countRunning = action.payload.length;
+        }
       })
       .addCase(fetchContainers.fulfilled, (state, action) => {
-        // Merge containers by Id to keep a single source of truth across views
-        const mergedById: Record<number, ContainerEntity> = {} as any;
+        const fetchedEndpointId = action.meta.arg.endpointId;
+        
+        // If endpoint changed, replace all containers instead of merging
+        if (state.currentEndpointId !== fetchedEndpointId) {
+          // Endpoint changed - replace all containers
+          state.containers = action.payload;
+          state.currentEndpointId = fetchedEndpointId;
+        } else {
+          // Same endpoint - merge containers by Id to keep a single source of truth across views
+          const mergedById: Record<number, ContainerEntity> = {} as any;
 
-        // Seed with existing containers
-        state.containers.forEach((existing) => {
-          if (existing && typeof existing.Id !== 'undefined') {
-            mergedById[existing.Id] = existing;
-          }
-        });
+          // Seed with existing containers
+          state.containers.forEach((existing) => {
+            if (existing && typeof existing.Id !== 'undefined') {
+              mergedById[existing.Id] = existing;
+            }
+          });
 
-        // Upsert fetched containers
-        action.payload.forEach((incoming) => {
-          if (incoming && typeof incoming.Id !== 'undefined') {
-            mergedById[incoming.Id] = incoming;
-          }
-        });
+          // Upsert fetched containers
+          action.payload.forEach((incoming) => {
+            if (incoming && typeof incoming.Id !== 'undefined') {
+              mergedById[incoming.Id] = incoming;
+            }
+          });
 
-        state.containers = Object.values(mergedById);
+          state.containers = Object.values(mergedById);
+        }
+
         state.count = state.containers.length;
 
         state.containers.forEach((container: ContainerEntity) => {
@@ -169,7 +193,7 @@ export const containerSlice = createSlice({
   },
 });
 
-export const { setSelectedContainer } = containerSlice.actions;
+export const { setSelectedContainer, clearContainerState } = containerSlice.actions;
 
 export const selectContainers = (state: RootState) => state.containers;
 export const selectContainerLogs = (containerId: number) => 

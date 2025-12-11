@@ -144,7 +144,7 @@ const ContainerLogs = ({ route, navigation }: any) => {
             />
           ) : null }
       </ScrollView>
-      <Footer/>
+      <Footer navigation={navigation} activeTab="ContainerLogs" />
     </View>
   );
 };

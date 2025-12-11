@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Switch, StyleSheet, Image, TouchableOpacity, Modal, Text, SafeAreaView } from 'react-native';
+import { View, Switch, StyleSheet, Image, TouchableOpacity, Modal, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/FontAwesome';
 import { useAuth } from 'src/store/useAuth';
 import SecureStoreEntry from 'src/enums/SecureStoreEntry';
@@ -38,7 +39,7 @@ const Header = ({navigation, screen}: any) => {
 
     return (
         <View style={styles.topHeaderContainer}>
-            <TouchableOpacity onPress={() => navigation.openDrawer()}>
+            <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.leftTouchable}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Icon 
                     name="bars" 
@@ -66,8 +67,9 @@ const Header = ({navigation, screen}: any) => {
                     size={18}
                     color={theme === 'dark' ? '#fff' : '#000'}
                 />
+                {(screen === 'stacks' || screen === 'containers') ? (
                 <View style={styles.sortButtonWrapper}>
-                    {(screen === 'stacks' || screen === 'containers') ? (
+
                         <TouchableOpacity style={styles.sortButton} onPress={toggleModal}>
                         <Icon
                             name='sort'
@@ -75,10 +77,9 @@ const Header = ({navigation, screen}: any) => {
                             color={theme === 'dark' ? '#fff' : '#000'}
                         />
                         </TouchableOpacity>
-                    ) : (
-                        <View style={styles.sortButtonPlaceholder} />
-                    )}
-                </View>
+                </View>)
+                : (<></>)
+                }
             </View>
             
             <Modal
@@ -108,21 +109,15 @@ const createStyles = (theme: string) => {
     return StyleSheet.create({
         sortButtonWrapper: {
             marginLeft: 20,
-            width: 40, // fixed width to ensure layout consistency
+            width: 40,
             alignItems: 'center',
             justifyContent: 'center',
         },
-
         sortButton: {
             backgroundColor: 'rgba(221,221,221,0.6)',
             padding: 10,
             borderRadius: 5,
         },
-
-        sortButtonPlaceholder: {
-            width: 40,
-            height: 40,
-        }, 
         textLabel: {
             color: theme === 'light' ? '#000000' : '#ffffff',
         },
@@ -143,17 +138,21 @@ const createStyles = (theme: string) => {
             borderColor: "#ccc",
         },
         topHeaderContainer: {
-            marginTop: 56,
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            marginLeft: 16,
+            marginLeft: 8,
+            marginRight: 8
         },
         headerContainer: {
             backgroundColor: theme === 'light' ? '#f9f9f9' : '#121212',
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
+            marginLeft: 'auto',
+            marginRight: 8
+        },
+        leftTouchable: {
+          flexShrink: 1,
+          flexBasis: 'auto'
         },
         button: {
             alignItems: 'center',
@@ -164,7 +163,6 @@ const createStyles = (theme: string) => {
             width: 120,
             height: 60,
             marginLeft: 10,
-            
         },
         container: {
             flex: 1,

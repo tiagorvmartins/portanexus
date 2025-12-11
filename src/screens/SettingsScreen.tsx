@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import AppHeader from '../components/AppHeader';
-
 import Footer from '../components/Footer';
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from 'src/store/useAuth';
 import SecureStoreEntry from 'src/enums/SecureStoreEntry';
 
@@ -61,8 +60,10 @@ const SettingsScreen = ({navigation}: any) => {
         setLogMaxLines(itemValue)
     }
 
+    const insets = useSafeAreaInsets();
+
     return (
-        <View style={styles.container}>
+      <View style={[styles.container, {paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
             <AppHeader navigation={navigation} />
             <View style={styles.centered}>
                 <Text style={styles.title}>Logs Refresh Interval</Text>
@@ -136,7 +137,7 @@ const SettingsScreen = ({navigation}: any) => {
                     </Picker>
                 </View>
             </View>
-            <Footer />
+            <Footer navigation={navigation} activeTab="Settings" />
         </View>
     );
 };

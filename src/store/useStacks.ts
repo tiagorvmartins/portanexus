@@ -2,7 +2,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from './store';
 import GetStacksPayload from 'src/types/GetStacksPayload';
-import { fetchStacks, fetchStack, selectStacks, startStack, stopStack, restartStack } from 'src/features/stacks/stacksSlice';
+import { fetchStacks, fetchStack, selectStacks, startStack, stopStack, restartStack, stackSlice } from 'src/features/stacks/stacksSlice';
 
 export const useStacks = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -28,5 +28,7 @@ export const useStacks = () => {
 
         restartStack: (payload: GetStacksPayload) =>
             dispatch(restartStack(payload)),
+
+        clearStacksState: () => dispatch(stackSlice.actions.clearStacksState()),
     };
 };
