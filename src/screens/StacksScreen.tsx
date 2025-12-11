@@ -29,7 +29,8 @@ const StacksScreen = ({navigation}: any) => {
   
   // Track if we've refreshed on focus to prevent duplicate fetches
   const hasRefreshedOnFocusRef = useRef(false);
-  const lastEndpointRef = useRef(selectedEndpointId);
+  // Track the combination of endpoint + swarm as the key for fetching
+  const lastEndpointKeyRef = useRef<string>('');
   
   // Store latest functions in refs to avoid recreating callbacks
   const addLoadingRef = useRef(addLoadingComponent);
@@ -37,6 +38,7 @@ const StacksScreen = ({navigation}: any) => {
   const fetchEndpointsRef = useRef(fetchEndpoints);
   const fetchStacksRef = useRef(fetchStacks);
   const clearStacksStateRef = useRef(clearStacksState);
+  const endpointsRef = useRef(endpoints);
   
   // Update refs on each render
   addLoadingRef.current = addLoadingComponent;
@@ -44,14 +46,36 @@ const StacksScreen = ({navigation}: any) => {
   fetchEndpointsRef.current = fetchEndpoints;
   fetchStacksRef.current = fetchStacks;
   clearStacksStateRef.current = clearStacksState;
+  endpointsRef.current = endpoints;
+  
+  // Create endpoint key without dependencies to avoid infinite loops
+  // Use refs internally instead
+  const getEndpointKey = useCallback((endpointId: number, swarmId: string | number | undefined) => {
+    const selectedEndpoint = endpointsRef.current.find(e => Number(e.Id) === endpointId);
+    const isSwarm = selectedEndpoint?.IsSwarm ?? false;
+    
+    let swarmIdToUse: string | number = 0;
+    if (isSwarm) {
+      if (swarmId && swarmId !== 0 && swarmId !== '0') {
+        swarmIdToUse = typeof swarmId === 'string' ? swarmId : String(swarmId);
+      } else if (selectedEndpoint?.SwarmId) {
+        swarmIdToUse = selectedEndpoint.SwarmId;
+      }
+    }
+    
+    return `${endpointId}-${swarmIdToUse}`;
+  }, []); // Empty deps - use refs internally
 
   const fetchStacksFn = useCallback(async () => {
-    if (selectedEndpointId === -1) {
+    const endpointId = selectedEndpointId;
+    const swarmId = selectedSwarmId;
+    
+    if (endpointId === -1) {
       return;
     }
     
-    // Check if the endpoint is a swarm endpoint
-    const selectedEndpoint = endpoints.find(e => Number(e.Id) === selectedEndpointId);
+    // Check if the endpoint is a swarm endpoint using ref
+    const selectedEndpoint = endpointsRef.current.find(e => Number(e.Id) === endpointId);
     const isSwarm = selectedEndpoint?.IsSwarm ?? false;
     
     // Use swarmId if endpoint is a swarm
@@ -59,9 +83,9 @@ const StacksScreen = ({navigation}: any) => {
     // SwarmId is a Docker Swarm cluster ID (string hash), not a number
     let swarmIdToUse: string | number = 0;
     if (isSwarm) {
-      if (selectedSwarmId && selectedSwarmId !== 0 && selectedSwarmId !== '0') {
+      if (swarmId && swarmId !== 0 && swarmId !== '0') {
         // Convert to string if it's a number, otherwise use as-is
-        swarmIdToUse = typeof selectedSwarmId === 'string' ? selectedSwarmId : String(selectedSwarmId);
+        swarmIdToUse = typeof swarmId === 'string' ? swarmId : String(swarmId);
       } else if (selectedEndpoint?.SwarmId) {
         // endpoint.SwarmId is always a string (Docker Swarm cluster ID)
         swarmIdToUse = selectedEndpoint.SwarmId;
@@ -69,11 +93,11 @@ const StacksScreen = ({navigation}: any) => {
     }
     
     try {
-      await fetchStacksRef.current({ endpointId: selectedEndpointId, filters: {}, swarmId: swarmIdToUse });
+      await fetchStacksRef.current({ endpointId, filters: {}, swarmId: swarmIdToUse });
     } catch {
       showErrorToast("There was an error fetching stacks", theme)
     }
-  }, [selectedEndpointId, selectedSwarmId, endpoints, theme]);
+  }, [selectedEndpointId, selectedSwarmId]); // Removed endpoints and theme from deps
 
   const performRefresh = useCallback(async () => {
     if (selectedEndpointId === -1) {
@@ -100,15 +124,22 @@ const StacksScreen = ({navigation}: any) => {
     performRefresh();
   }, [performRefresh]);
 
-  // Handle endpoint/swarm changes - clear and refetch
+  // Store fetchStacksFn in ref to avoid dependency issues
+  const fetchStacksFnRef = useRef(fetchStacksFn);
+  fetchStacksFnRef.current = fetchStacksFn;
+
+  // Handle endpoint/swarm changes - clear and refetch (non-blocking)
   useEffect(() => {
     if (selectedEndpointId === -1) {
       return;
     }
     
-    // Check if endpoint actually changed
-    if (lastEndpointRef.current !== selectedEndpointId) {
-      lastEndpointRef.current = selectedEndpointId;
+    // Create the current endpoint key (combination of endpoint + swarm)
+    const currentEndpointKey = getEndpointKey(selectedEndpointId, selectedSwarmId);
+    
+    // Check if endpoint/swarm combination actually changed
+    if (lastEndpointKeyRef.current !== currentEndpointKey) {
+      lastEndpointKeyRef.current = currentEndpointKey;
       
       // Reset focus ref when endpoint changes
       hasRefreshedOnFocusRef.current = false;
@@ -116,14 +147,11 @@ const StacksScreen = ({navigation}: any) => {
       // Clear stacks immediately when endpoint changes to show empty state while loading
       clearStacksStateRef.current();
       
-      // Block loading until stacks are fetched
-      addLoadingRef.current();
-      
-      fetchStacksFn().finally(() => {
-        removeLoadingRef.current();
-      });
+      // Don't block UI - fetch in background and let screen render
+      // The Stacks component will show its own loading state
+      fetchStacksFnRef.current();
     }
-  }, [selectedEndpointId, selectedSwarmId, fetchStacksFn]);
+  }, [selectedEndpointId, selectedSwarmId]); // Only depend on endpoint and swarm ID
 
   useEffect(() => {
     if(!isLoggedIn) {
@@ -141,26 +169,32 @@ const StacksScreen = ({navigation}: any) => {
         return;
       }
       
-      // Only refresh if we haven't already, and endpoint hasn't changed
-      if (!hasRefreshedOnFocusRef.current && lastEndpointRef.current === selectedEndpointId) {
+      // Create the current endpoint key
+      const currentEndpointKey = getEndpointKey(selectedEndpointId, selectedSwarmId);
+      
+      // Only refresh if we haven't already, and endpoint/swarm hasn't changed
+      // Also check if stacks are already loaded for this endpoint (avoid unnecessary fetch)
+      if (!hasRefreshedOnFocusRef.current && lastEndpointKeyRef.current === currentEndpointKey) {
         hasRefreshedOnFocusRef.current = true;
-        performRefreshRef.current();
+        // Don't block - fetch in background
+        // Only show blocking loader on manual refresh via onRefresh
+        fetchStacksFnRef.current();
       }
       
       // Reset ref when screen loses focus (cleanup)
       return () => {
         // Don't reset if endpoint changed (let the endpoint effect handle it)
-        if (lastEndpointRef.current === selectedEndpointId) {
+        if (lastEndpointKeyRef.current === currentEndpointKey) {
           hasRefreshedOnFocusRef.current = false;
         }
       };
-    }, [isLoggedIn, selectedEndpointId])
+    }, [isLoggedIn, selectedEndpointId, selectedSwarmId]) // Removed getEndpointKey from deps
   );
 
   const insets = useSafeAreaInsets();
 
   return (
-      <View style={[styles.container, {paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, {paddingTop: insets.top }]} concontentContainerStyle={{ paddingBottom: insets.bottom }}>
        <AppHeader navigation={navigation} screen="stacks" />
        <ContainerHeader running={stacksRunning} exited={stacksStopped} activeLabel="Stacks Running" inactiveLabel="Stacks Inactive" />
        <View style={styles.inputContainer}>

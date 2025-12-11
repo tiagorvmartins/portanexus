@@ -87,14 +87,10 @@ export const stackSlice = createSlice({
       .addCase(fetchStacks.fulfilled, (state, action) => {
         const fetchedEndpointId = action.meta.arg.endpointId;
         
-        // If endpoint changed, replace all stacks instead of merging
-        if (state.currentEndpointId !== fetchedEndpointId) {
-          state.stacks = action.payload;
-          state.currentEndpointId = fetchedEndpointId;
-        } else {
-          // Same endpoint - replace stacks (they should be fresh from API)
-          state.stacks = action.payload;
-        }
+        // Always replace stacks - they should be fresh from API
+        // If endpoint changed (or was cleared), currentEndpointId will be different
+        state.stacks = action.payload;
+        state.currentEndpointId = fetchedEndpointId;
         
         state.count = action.payload.length;
         state.stacksRunning = action.payload.filter(p => p.Status === 1).length
