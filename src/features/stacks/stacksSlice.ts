@@ -1,8 +1,10 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { get, start, stop, find } from './stacksAPI';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { get, start, stop, find, deleteStack as deleteStackApi, getStackFile as getStackFileApi, updateStack as updateStackApi, createStack as createStackApi } from './stacksAPI';
 import { RootState } from 'src/store/store';
 import StackEntity from 'src/features/stacks/StackEntity';
 import GetStacksPayload from 'src/types/GetStacksPayload';
+import CreateStackPayload from 'src/types/CreateStackPayload';
+import UpdateStackPayload from 'src/types/UpdateStackPayload';
 
 
 interface StacksState {
@@ -67,7 +69,36 @@ export const restartStack = createAsyncThunk<
   GetStacksPayload
 >("stacks/restart", async (data: GetStacksPayload) => {
   await stop(data);
-  await start(data);  
+  await start(data);
+});
+
+export const deleteStack = createAsyncThunk<
+  number,
+  { stackId: number; endpointId: number }
+>("stacks/delete", async ({ stackId, endpointId }) => {
+  await deleteStackApi(stackId, endpointId);
+  return stackId;
+});
+
+export const getStackFile = createAsyncThunk<
+  string,
+  number
+>("stacks/getFile", async (stackId: number) => {
+  return await getStackFileApi(stackId);
+});
+
+export const updateStack = createAsyncThunk<
+  StackEntity,
+  UpdateStackPayload
+>("stacks/update", async (payload: UpdateStackPayload) => {
+  return await updateStackApi(payload);
+});
+
+export const createStack = createAsyncThunk<
+  StackEntity,
+  CreateStackPayload
+>("stacks/create", async (payload: CreateStackPayload) => {
+  return await createStackApi(payload);
 });
 
 export const stackSlice = createSlice({
@@ -81,9 +112,21 @@ export const stackSlice = createSlice({
       state.stacksStopped = 0;
       state.currentEndpointId = -1;
     },
+    removeStack: (state, action: { payload: number }) => {
+      state.stacks = state.stacks.filter(s => s.Id !== action.payload);
+      state.count = state.stacks.length;
+      state.stacksRunning = state.stacks.filter(s => s.Status === 1).length;
+      state.stacksStopped = state.stacks.filter(s => s.Status !== 1).length;
+    },
   },
   extraReducers: builder => {
     builder
+      .addCase(deleteStack.fulfilled, (state, action) => {
+        state.stacks = state.stacks.filter(s => s.Id !== action.payload);
+        state.count = state.stacks.length;
+        state.stacksRunning = state.stacks.filter(s => s.Status === 1).length;
+        state.stacksStopped = state.stacks.filter(s => s.Status !== 1).length;
+      })
       .addCase(fetchStacks.fulfilled, (state, action) => {
         const fetchedEndpointId = action.meta.arg.endpointId;
         

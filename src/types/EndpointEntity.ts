@@ -1,3 +1,14 @@
+export interface EndpointSnapshot {
+  Swarm?: boolean;
+  RunningContainerCount?: number;
+  StoppedContainerCount?: number;
+  TotalCPU?: number;
+  TotalMemory?: number;
+  NodeCount?: number;
+  ServiceCount?: number;
+  StackCount?: number;
+}
+
 export default interface EndpointEntity {
   Id?: number;
   Name?: string;
@@ -8,4 +19,5 @@ export default interface EndpointEntity {
   GroupId?: number;
   PublicURL?: string;
   Status?: 'UP' | 'DOWN';
+  Snapshots?: EndpointSnapshot[];
 }

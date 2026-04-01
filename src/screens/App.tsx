@@ -15,7 +15,6 @@ import LoginScreen from './LoginScreen';
 import ClusterScreen from './ClusterScreen';
 import StacksScreen from './StacksScreen';
 import ContainersScreen from './ContainerScreen';
-import EndpointLists from './EndpointsList';
 import SettingsScreen from './SettingsScreen';
 import NodesScreen from './NodesScreen';
 import TasksScreen from './TasksScreen';
@@ -25,6 +24,10 @@ import { showErrorToast, showSuccessToast } from 'src/utils/toast';
 import { haveLoginDetail as haveLoginDetailThunk } from '../features/auth/authSlice'
 import { useEndpoints } from 'src/store/useEndpoints';
 import ContainerLogs from 'src/features/container/ContainerLogs';
+import EditStackScreen from './EditStackScreen';
+import CreateStackScreen from './CreateStackScreen';
+import DashboardScreen from './DashboardScreen';
+import ContainerStatsScreen from './ContainerStatsScreen';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
@@ -60,14 +63,14 @@ function CustomDrawerContent(props: any) {
   };
 
   const drawerItemsDockerType = [
-    { label: 'Endpoints', route: 'Endpoints' },
+    { label: 'Dashboard', route: 'Dashboard' },
     { label: 'Containers', route: 'Containers' },
     { label: 'Stacks', route: 'Stacks' },
     { label: 'Settings', route: 'Settings' },
   ];
 
   const drawerItemsDockerSwarmType = [
-    { label: 'Endpoints', route: 'Endpoints' },
+    { label: 'Dashboard', route: 'Dashboard' },
     { label: 'Cluster', route: 'Cluster' },
     { label: 'Nodes', route: 'Nodes' },
     { label: 'Services', route: 'Services' },
@@ -156,8 +159,8 @@ const DrawerNavigator = () => {
         drawerInactiveBackgroundColor: '#05E6F2'+20,
         headerTintColor: theme === 'dark' ? "#FFFFFF" : "#000000" 
       }}
-      initialRouteName="Endpoints" drawerContent={props => <CustomDrawerContent {...props} ></CustomDrawerContent>}>
-      <Drawer.Screen name="Endpoints" component={EndpointLists} options={{ headerTitle:'' }} />
+      initialRouteName="Dashboard" drawerContent={props => <CustomDrawerContent {...props} ></CustomDrawerContent>}>
+      <Drawer.Screen name="Dashboard" component={DashboardScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="Cluster" component={ClusterScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="Nodes" component={NodesScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="Services" component={ServicesScreen} options={{ headerTitle:'' }} />
@@ -166,6 +169,9 @@ const DrawerNavigator = () => {
       <Drawer.Screen name="Stacks" component={StacksScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="Settings" component={SettingsScreen} options={{ headerTitle:'' }} />
       <Drawer.Screen name="ContainerLogs" component={ContainerLogs} options={{ headerTitle:'', drawerItemStyle: { display: 'none' } }}  />
+      <Drawer.Screen name="EditStack" component={EditStackScreen} options={{ headerTitle:'', drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="CreateStack" component={CreateStackScreen} options={{ headerTitle:'', drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="ContainerStats" component={ContainerStatsScreen} options={{ headerTitle:'', drawerItemStyle: { display: 'none' } }} />
     </Drawer.Navigator>
   );
 }

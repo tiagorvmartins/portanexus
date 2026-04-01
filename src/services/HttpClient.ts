@@ -83,6 +83,16 @@ class HttpClient implements IHttpClient {
       .then((response) => response.data);
   }
 
+  public put<DataType, ResponseType>(
+    url: string,
+    data?: DataType,
+    config?: AxiosRequestConfig
+  ) {
+    return this.initialize()
+      .then((axios: AxiosStatic) => axios.put<ResponseType>(url, data, config))
+      .then((response) => response.data);
+  }
+
   public delete<ResponseType>(url: string, config?: AxiosRequestConfig) {
       return this.initialize()
       .then((axios: AxiosStatic) => axios.delete<ResponseType>(url, config))
