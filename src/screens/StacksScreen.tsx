@@ -1,5 +1,5 @@
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform, Pressable, StyleSheet, TextInput, View, ViewStyle, Text } from "react-native";
+import { Platform, Pressable, StyleSheet, TextInput, TouchableOpacity, View, ViewStyle, Text } from "react-native";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { showErrorToast } from "src/utils/toast";
 import { useFocusEffect } from '@react-navigation/native';
@@ -194,9 +194,14 @@ const StacksScreen = ({navigation}: any) => {
   const insets = useSafeAreaInsets();
 
   return (
-      <View style={[styles.container, {paddingTop: insets.top }]} concontentContainerStyle={{ paddingBottom: insets.bottom }}>
+      <View style={[styles.container, {paddingTop: insets.top }]}>
        <AppHeader navigation={navigation} screen="stacks" />
        <ContainerHeader running={stacksRunning} exited={stacksStopped} activeLabel="Stacks Running" inactiveLabel="Stacks Inactive" />
+       <View style={styles.createRow}>
+         <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateStack')}>
+           <Text style={styles.createButtonText}>+ New Stack</Text>
+         </TouchableOpacity>
+       </View>
        <View style={styles.inputContainer}>
           <TextInput
             multiline={Platform.OS === "web" ? false : true}
@@ -287,6 +292,22 @@ const createStyles = (theme: string) => {
       fontSize: 14,
       fontWeight: "bold",
       color: "#333",
+    },
+    createRow: {
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+      alignItems: 'flex-end',
+    },
+    createButton: {
+      backgroundColor: '#05E6F2',
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    createButtonText: {
+      color: '#000',
+      fontWeight: 'bold',
+      fontSize: 14,
     },
   });
 };

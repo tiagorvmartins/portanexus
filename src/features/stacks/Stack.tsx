@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo } from "react";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import Loading from "../../components/Loading";
 import moment from "moment";
 import Icon from '@expo/vector-icons/FontAwesome';
@@ -69,7 +69,7 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
   const { selectedEndpointId, selectedSwarmId } = useEndpoints();
   const { fetchSingleContainer } = useContainer();
 
-  const { startStack, stopStack, restartStack, fetchStacks } = useStacks()
+  const { startStack, stopStack, restartStack, fetchStacks, deleteStack } = useStacks()
   
   const [expanded, setExpanded] = useState(false);
   
@@ -131,6 +131,30 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
     setLocalLoading(false)
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Stack',
+      `Are you sure you want to delete "${stackName}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setLocalLoading(true);
+            try {
+              await deleteStack({ stackId, endpointId: selectedEndpointId });
+              showSuccessToast('Stack deleted successfully!', theme);
+            } catch {
+              showErrorToast('There was an error deleting the stack', theme);
+            }
+            setLocalLoading(false);
+          },
+        },
+      ]
+    );
+  };
+
   // containers are derived in parent; no local syncing needed
 
   const updateSpecificContainer = useCallback(async (containerId: number) => {
@@ -183,6 +207,22 @@ const Stack = ({ navigation, stackName, status, stackId, creationDate, container
                 size={16}
                 style={status === 1 ? styles.disabled : styles.enabled}
                 color={theme === 'dark' ? '#fff' : '#000'}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); navigation.navigate('EditStack', { stackId, stackName }) }}>
+              <Icon
+                name="pencil"
+                size={16}
+                style={styles.enabled}
+                color={theme === 'dark' ? '#fff' : '#000'}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleDelete() }}>
+              <Icon
+                name="trash"
+                size={16}
+                style={styles.enabled}
+                color='#cc3333'
               />
             </TouchableOpacity>
           </View>
@@ -291,7 +331,7 @@ const createStyles = (theme: string) => {
       alignItems: 'center',
       justifyContent: 'space-evenly',
       marginBottom: 8,
-      width: 120,
+      width: 180,
     },
     dotActive: {
       width: 10,

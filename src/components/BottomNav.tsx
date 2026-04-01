@@ -1,10 +1,10 @@
 import { View, Pressable, Text, StyleSheet } from "react-native"
-import { Layers, Server, Box, Activity, Boxes, Settings, SquareChartGantt, Cpu, Workflow } from "lucide-react-native"
+import { Layers, Box, Activity, Boxes, Settings, SquareChartGantt, Cpu, Workflow } from "lucide-react-native"
 import { useAuth } from "src/store/useAuth";
 import { useEndpoints } from 'src/store/useEndpoints';
 import { useRoute } from '@react-navigation/native';
 interface BottomNavProps {
-  activeTab: "Endpoints" | "Containers" | "Stacks" | "Settings"
+  activeTab: "Dashboard" | "Containers" | "Stacks" | "Settings"
 }
 
 export function BottomNav({navigation, activeTab, isSwarm} : any) {
@@ -24,14 +24,14 @@ export function BottomNav({navigation, activeTab, isSwarm} : any) {
     }
 
     const tabsDockerType = [
-        { id: "Endpoints" as const, label: "Endpoints", icon: Server },
+        { id: "Dashboard" as const, label: "Dashboard", icon: Activity },
         { id: "Containers" as const, label: "Containers", icon: Box },
         { id: "Stacks" as const, label: "Stacks", icon: Layers },
         { id: "Settings" as const, label: "Settings", icon: Settings },
     ]
 
     const tabsDockerSwarmType = [
-        { id: "Endpoints" as const, label: "Endpoints", icon: Server },
+        { id: "Dashboard" as const, label: "Dashboard", icon: Activity },
         { id: "Cluster" as const, label: "Cluster", icon: Boxes },
         { id: "Nodes" as const, label: "Nodes", icon: Cpu },
         { id: "Services" as const, label: "Services", icon: SquareChartGantt },

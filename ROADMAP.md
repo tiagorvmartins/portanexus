@@ -15,9 +15,9 @@ More details below.
 **Goals:** Expand management capabilities.
 - **Stack Management:**
   - Add functionalities to create and delete stacks. :white_check_mark:
-  - Enable editing existing stack configurations.
+  - Enable editing existing stack configurations. :white_check_mark:
 - **Notifications:**
-  - Implement push notifications for container and stack status changes.
+  - Implement push notifications for container and stack status changes. 
 - **Search Functionality:**
   - Add search functionality for containers and stacks. :white_check_mark:
 
@@ -33,7 +33,7 @@ More details below.
 #### **Version 0.5.0**
 **Goals:** Enhance analytics and monitoring features.
 - **Container Metrics Dashboard:**
-  - Visualize key metrics (CPU, memory usage) for containers in a dashboard format.
+  - Visualize key metrics (CPU, memory usage) for containers in a dashboard format. :white_check_mark:
 - **Improved Reporting:** 
   - Enhance reporting capabilities with better popups and alerts.
 

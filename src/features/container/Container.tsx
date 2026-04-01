@@ -94,7 +94,7 @@ const Container = ({ navigation, containerName, status, containerId, state, onUp
             </View>
           </TouchableOpacity>
           <View style={styles.cardHeaderOperations}>
-            <TouchableOpacity 
+            <TouchableOpacity
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               onPress={(e) => { e.stopPropagation(); restart(containerId) } }  disabled={status !== "running"}>
               <Icon
@@ -104,7 +104,7 @@ const Container = ({ navigation, containerName, status, containerId, state, onUp
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               onPress={(e) => { e.stopPropagation(); stop(containerId)} } disabled={state !== "running"}>
               <Icon
@@ -114,13 +114,23 @@ const Container = ({ navigation, containerName, status, containerId, state, onUp
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               onPress={(e) => { e.stopPropagation(); start(containerId) }} disabled={state === "running"}>
               <Icon
                 name="play"
                 size={16}
                 style={state === "running" ? styles.disabled : styles.enabled}
+                color={theme === 'dark' ? '#fff' : '#000'}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={(e) => { e.stopPropagation(); navigation.navigate('ContainerStats', { containerId, containerName }) }}>
+              <Icon
+                name="bar-chart"
+                size={16}
+                style={styles.enabled}
                 color={theme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
@@ -204,7 +214,7 @@ const createStyles = (theme: string) => {
       alignItems: 'center',
       justifyContent: 'space-evenly',
       marginBottom: 8,
-      width: 120,
+      width: 160,
     }, 
     dotActive: {
       width: 10,
